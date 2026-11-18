@@ -11,6 +11,7 @@ let CONTENT, THEMES, PRESETS;
     if (!res.ok) throw new Error('api/config -> ' + res.status);
     const data = await res.json();
     [CONTENT, THEMES, PRESETS] = [data.content, data.themes, data.presets];
+    restoreDraft();
     showStatus('✅ Loaded current configuration from the server (Neon).', 'success');
   } catch (err) {
     // Fallback: static seed files
@@ -20,6 +21,7 @@ let CONTENT, THEMES, PRESETS;
         fetch('config/themes.json').then(r => r.json()),
         fetch('config/presets.json').then(r => r.json()),
       ]);
+      restoreDraft();
       showStatus('⚠️ Could not reach the API — loaded bundled seed files. Edits can still be saved.', 'info');
     } catch (e2) {
       showStatus('❌ Failed to load configuration: ' + e2.message, 'error');
@@ -55,6 +57,19 @@ function clearDraft() {
   localStorage.removeItem('draft_content');
   localStorage.removeItem('draft_themes');
   localStorage.removeItem('draft_presets');
+}
+
+function restoreDraft() {
+  try {
+    const draft = ['content', 'themes', 'presets'].map((key) =>
+      JSON.parse(localStorage.getItem(`draft_${key}`))
+    );
+    if (draft.every(Boolean)) {
+      [CONTENT, THEMES, PRESETS] = draft;
+    }
+  } catch (err) {
+    showStatus('⚠️ Could not restore the saved draft: ' + err.message, 'error');
+  }
 }
 
 // === THEMES ===
@@ -239,6 +254,8 @@ function escapeHtml(s) {
 
 // === PREVIEW ===
 function openPreview() {
+  saveContentFields();
+  saveMediaFields();
   window.open('index.html?preview=1&t=' + Date.now(), '_blank');
 }
 

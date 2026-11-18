@@ -28,6 +28,18 @@ const Templates = (() => {
         fetchJson('config/presets.json'),
       ]);
     }
+    if (new URLSearchParams(window.location.search).get('preview') === '1') {
+      try {
+        const draft = ['content', 'themes', 'presets'].map((key) =>
+          JSON.parse(localStorage.getItem(`draft_${key}`))
+        );
+        if (draft.every(Boolean)) {
+          [contentConfig, themesConfig, presetsConfig] = draft;
+        }
+      } catch (err) {
+        console.warn('Could not load the saved preview draft:', err.message);
+      }
+    }
     return { content: contentConfig, themes: themesConfig, presets: presetsConfig };
   }
 

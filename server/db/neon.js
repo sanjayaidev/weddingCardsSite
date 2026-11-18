@@ -4,22 +4,6 @@
  */
 const { neon } = require('@neondatabase/serverless');
 
-const SCHEMA = `
-CREATE TABLE IF NOT EXISTS site_config (
-  key        TEXT PRIMARY KEY,
-  value      JSONB NOT NULL,
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-CREATE TABLE IF NOT EXISTS rsvps (
-  id         BIGSERIAL PRIMARY KEY,
-  name       TEXT NOT NULL,
-  "from"     TEXT,
-  events     TEXT,
-  guests     TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-`;
-
 function createNeonStore(connectionString) {
   const sql = neon(connectionString);
 
@@ -27,7 +11,23 @@ function createNeonStore(connectionString) {
     kind: 'neon',
 
     async init() {
-      await sql.query(SCHEMA);
+      await sql.query(`
+        CREATE TABLE IF NOT EXISTS site_config (
+          key        TEXT PRIMARY KEY,
+          value      JSONB NOT NULL,
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+      `);
+      await sql.query(`
+        CREATE TABLE IF NOT EXISTS rsvps (
+          id         BIGSERIAL PRIMARY KEY,
+          name       TEXT NOT NULL,
+          "from"     TEXT,
+          events     TEXT,
+          guests     TEXT,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+      `);
     },
 
     async getConfig(key) {

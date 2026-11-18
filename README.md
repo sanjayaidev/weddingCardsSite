@@ -20,12 +20,22 @@ file store in `data/` so you can develop offline. As soon as you set your
 Neon connection string, everything is persisted in Postgres instead
 (schema `site_config` + `rsvps` is created automatically on boot).
 
+On Vercel, add `DATABASE_URL` and `ADMIN_TOKEN` under **Project Settings →
+Environment Variables**, then redeploy. The API function creates the tables
+and seeds the config on its first request. The admin token is a shared secret:
+it authorizes config edits and RSVP viewing; it does not connect to Neon or
+create tables. In the admin page, enter the same value as `ADMIN_TOKEN`.
+
+The admin page keeps unsaved changes in that browser's local storage. Click
+**Live Preview** to open the invitation with those draft changes; click
+**Save to Server** to publish them for all visitors.
+
 ## Neon setup
 
 1. Create a project at https://console.neon.tech
 2. Copy the **connection string** into `.env`:
    `DATABASE_URL=postgresql://user:pass@ep-xxxx.neon.tech/neondb?sslmode=require`
-3. Restart the server — tables are created and seeded from `config/*.json` on first run.
+3. Restart the local server (or make the first API request on Vercel) — tables are created and seeded from `config/*.json`.
 
 ## API
 

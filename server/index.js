@@ -16,7 +16,6 @@
 require('dotenv').config();
 
 const path = require('path');
-const fs = require('fs');
 const express = require('express');
 
 const { createNeonStore } = require('./db/neon');
@@ -29,22 +28,46 @@ const DATA_DIR = path.join(ROOT, 'data');
 const CONFIG_KEYS = ['content', 'themes', 'presets'];
 
 // ---------- Store selection (Neon if configured, else local file fallback) ----------
-const connectionString = process.env.DATABASE_URL || process.env.NEON_CONNECTION_STRING || '';
-const store = connectionString ? createNeonStore(connectionString) : createFileStore(DATA_DIR);
+const connectionString = process.env.DATABASE_URL
+  || process.env.NEON_CONNECTION_STRING
+  || process.env.POSTGRES_URL
+  || '';
+const store = connectionString
+  ? createNeonStore(connectionString)
+  : (process.env.VERCEL ? null : createFileStore(DATA_DIR));
 
 // ---------- Seed helpers ----------
 function readSeedFile(key) {
-  return JSON.parse(fs.readFileSync(path.join(CONFIG_DIR, `${key}.json`), 'utf8'));
+  return require(path.join(CONFIG_DIR, `${key}.json`));
 }
 
-async function ensureSeeded() {
+async function ensureSeeded(targetStore) {
   for (const key of CONFIG_KEYS) {
-    const existing = await store.getConfig(key);
+    const existing = await targetStore.getConfig(key);
     if (!existing) {
-      await store.setConfig(key, readSeedFile(key));
-      console.log(`[seed] config "${key}" loaded into ${store.kind} store`);
+      await targetStore.setConfig(key, readSeedFile(key));
+      console.log(`[seed] config "${key}" loaded into ${targetStore.kind} store`);
     }
   }
+}
+
+let initialization;
+async function initializeStore() {
+  if (!initialization) {
+    initialization = (async () => {
+      if (!store) {
+        throw new Error('DATABASE_URL is required when running on Vercel.');
+      }
+      if (store.kind === 'neon') {
+        await store.init();
+        console.log('[db] Connected to Neon, schema ready');
+      } else {
+        console.log('[db] No DATABASE_URL set — using local file store (data/). Set it in .env to enable Neon.');
+      }
+      await ensureSeeded(store);
+    })();
+  }
+  return initialization;
 }
 
 async function getConfigSafe(key) {
@@ -61,7 +84,12 @@ async function getConfigSafe(key) {
 // ---------- Admin auth ----------
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || '';
 function requireAdmin(req, res, next) {
-  if (!ADMIN_TOKEN) return next(); // no token configured -> open (local dev)
+  if (!ADMIN_TOKEN) {
+    if (process.env.VERCEL) {
+      return res.status(503).json({ error: 'ADMIN_TOKEN is not configured on the server.' });
+    }
+    return next();
+  }
   const given = req.headers['x-admin-token'] || req.query.token || '';
   if (given !== ADMIN_TOKEN) {
     return res.status(401).json({ error: 'Unauthorized — provide x-admin-token header' });
@@ -74,6 +102,16 @@ const app = express();
 app.use(express.json({ limit: '2mb' }));
 
 // API ---------------------------------------------------
+app.use('/api', async (req, res, next) => {
+  try {
+    await initializeStore();
+    next();
+  } catch (err) {
+    console.error('[db] initialization failed:', err.message);
+    res.status(503).json({ error: 'Database is not configured or is unavailable.' });
+  }
+});
+
 app.get('/api/health', async (req, res) => {
   let db = 'ok';
   try { await store.getConfig('content'); } catch (e) { db = 'error: ' + e.message; }
@@ -139,21 +177,17 @@ app.use(express.static(ROOT, { extensions: ['html'], maxAge: '1h' }));
 // ---------- Boot ----------
 const PORT = process.env.PORT || 3000;
 
-(async () => {
-  try {
-    if (store.kind === 'neon') {
-      await store.init();
-      console.log('[db] Connected to Neon, schema ready');
-    } else {
-      console.log('[db] No DATABASE_URL set — using local file store (data/). Set it in .env to enable Neon.');
-    }
-    await ensureSeeded();
-  } catch (err) {
-    console.error('[db] init failed, falling back to file store:', err.message);
-  }
-  app.listen(PORT, () => {
-    console.log(`✅ Server running at http://localhost:${PORT}`);
-    console.log(`   Invitation: http://localhost:${PORT}/`);
-    console.log(`   Admin:      http://localhost:${PORT}/admin.html`);
+if (require.main === module) {
+  initializeStore().then(() => {
+    app.listen(PORT, () => {
+      console.log(`✅ Server running at http://localhost:${PORT}`);
+      console.log(`   Invitation: http://localhost:${PORT}/`);
+      console.log(`   Admin:      http://localhost:${PORT}/admin.html`);
+    });
+  }).catch((err) => {
+    console.error('[db] initialization failed:', err.message);
+    process.exitCode = 1;
   });
-})();
+}
+
+module.exports = app;
