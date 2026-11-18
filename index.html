@@ -51,6 +51,7 @@
 
     <!-- STORY -->
     <section id="story-section" class="section story-section">
+      <img id="story-image" class="story-image hidden" alt="" />
       <div class="story-inner">
         <h2 class="story-heading" id="story-heading"></h2>
         <blockquote class="story-quote" id="story-quote"></blockquote>
@@ -63,6 +64,10 @@
       <p class="section-label" id="gallery-label"></p>
       <h2 class="section-heading" id="gallery-heading"></h2>
       <div id="gallery-grid" class="gallery-grid"></div>
+      <figure id="gallery-single" class="gallery-single hidden">
+        <img id="gallery-single-image" alt="" />
+        <figcaption id="gallery-single-caption"></figcaption>
+      </figure>
     </section>
 
     <!-- FAMILIES -->
@@ -110,6 +115,7 @@
         <select id="rsvp-events" required></select>
         <select id="rsvp-guests" required></select>
         <button type="submit" id="rsvp-button"></button>
+        <p id="rsvp-error" class="rsvp-error hidden" role="alert"></p>
       </form>
       <div id="rsvp-thanks" class="rsvp-thanks hidden">
         <p id="rsvp-thanks-msg"></p>

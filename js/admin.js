@@ -99,6 +99,11 @@ async function initializeAccount() {
   document.getElementById('account-login').addEventListener('click', () => authenticate('login'));
   document.getElementById('account-logout').addEventListener('click', logout);
   document.getElementById('publish-card').addEventListener('click', publishCard);
+  document.getElementById('add-gallery-image').addEventListener('click', () => {
+    CONTENT.gallery.images.push({ src: '', alt: '' });
+    renderGalleryFields();
+    persistDraft();
+  });
 
   try {
     const response = await fetch('/api/auth/session');
@@ -263,9 +268,13 @@ function loadMediaFields() {
   document.getElementById('media-hero').value = CONTENT.hero?.image || '';
   document.getElementById('media-story').value = CONTENT.story?.image || '';
   document.getElementById('media-venue').value = CONTENT.venue?.image || '';
+  document.getElementById('media-banner').value = CONTENT.banner?.image || '';
+  document.getElementById('media-gallery-single').value = CONTENT.gallery?.single?.image || '';
   document.getElementById('media-music').value = CONTENT.music?.src || '';
   document.getElementById('media-volume').value = CONTENT.music?.volume ?? 0.6;
   document.getElementById('vol-label').textContent = Math.round((CONTENT.music?.volume ?? 0.6) * 100) + '%';
+  renderGalleryFields();
+  renderEventImageFields();
 }
 
 function saveMediaFields() {
@@ -273,9 +282,90 @@ function saveMediaFields() {
   CONTENT.hero.image = document.getElementById('media-hero').value;
   CONTENT.story.image = document.getElementById('media-story').value;
   CONTENT.venue.image = document.getElementById('media-venue').value;
+  CONTENT.banner.image = document.getElementById('media-banner').value;
+  CONTENT.gallery.single.image = document.getElementById('media-gallery-single').value;
   CONTENT.music.src = document.getElementById('media-music').value;
   CONTENT.music.volume = parseFloat(document.getElementById('media-volume').value);
   persistDraft();
+}
+
+function renderGalleryFields() {
+  const list = document.getElementById('gallery-image-fields');
+  CONTENT.gallery.images = Array.isArray(CONTENT.gallery.images) ? CONTENT.gallery.images : [];
+  list.replaceChildren();
+
+  CONTENT.gallery.images.forEach((image, index) => {
+    const row = document.createElement('div');
+    row.className = 'image-editor-row';
+
+    const urlField = document.createElement('div');
+    urlField.className = 'field';
+    const urlLabel = document.createElement('label');
+    urlLabel.textContent = `Photo ${index + 1} URL`;
+    const urlInput = document.createElement('input');
+    urlInput.type = 'text';
+    urlInput.value = image.src || '';
+    urlInput.placeholder = 'https://... or assets/gallery/photo.jpg';
+    urlInput.addEventListener('input', () => {
+      image.src = urlInput.value;
+      persistDraft();
+    });
+    urlField.append(urlLabel, urlInput);
+
+    const altField = document.createElement('div');
+    altField.className = 'field';
+    const altLabel = document.createElement('label');
+    altLabel.textContent = 'Alt text';
+    const altInput = document.createElement('input');
+    altInput.type = 'text';
+    altInput.value = image.alt || '';
+    altInput.placeholder = 'Describe the photo';
+    altInput.addEventListener('input', () => {
+      image.alt = altInput.value;
+      persistDraft();
+    });
+    altField.append(altLabel, altInput);
+
+    const removeButton = document.createElement('button');
+    removeButton.className = 'btn btn-danger';
+    removeButton.type = 'button';
+    removeButton.textContent = 'Remove';
+    removeButton.addEventListener('click', () => {
+      CONTENT.gallery.images.splice(index, 1);
+      renderGalleryFields();
+      persistDraft();
+    });
+
+    row.append(urlField, altField, removeButton);
+    list.appendChild(row);
+  });
+}
+
+function renderEventImageFields() {
+  const list = document.getElementById('event-image-fields');
+  list.replaceChildren();
+
+  (CONTENT.events?.days || []).forEach((day) => {
+    const heading = document.createElement('h4');
+    heading.textContent = day.date;
+    list.appendChild(heading);
+    (day.items || []).forEach((event) => {
+      const field = document.createElement('div');
+      field.className = 'field';
+      const label = document.createElement('label');
+      label.textContent = `${event.title} image URL`;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = event.image || '';
+      input.placeholder = 'https://... or assets/events/photo.jpg';
+      input.addEventListener('input', () => {
+        event.image = input.value;
+        persistDraft();
+      });
+      field.append(label, input);
+      list.appendChild(field);
+    });
+  });
 }
 
 document.getElementById('media-volume').addEventListener('input', (e) => {

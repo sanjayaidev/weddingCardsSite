@@ -62,6 +62,7 @@
 
   // === STORY ===
   setText('story-heading', content.story?.heading);
+  setImg('story-image', content.story?.image);
   setText('story-quote', content.story?.quote);
   setText('story-by', content.story?.by);
 
@@ -73,6 +74,11 @@
     galleryGrid.innerHTML = content.gallery.images.map(img =>
       `<img src="${escapeHtml(safeUrl(img.src))}" alt="${escapeHtml(img.alt || '')}" class="scroll-reveal" loading="lazy" />`
     ).join('');
+  }
+  if (safeUrl(content.gallery?.single?.image)) {
+    setImg('gallery-single-image', content.gallery.single.image);
+    setText('gallery-single-caption', content.gallery.single.caption);
+    document.getElementById('gallery-single').classList.remove('hidden');
   }
 
   // === FAMILIES ===
@@ -100,6 +106,7 @@
         <h3>${escapeHtml(day.date)}</h3>
         ${day.items.map(item => `
           <div class="event-item scroll-reveal">
+            ${safeUrl(item.image) ? `<img class="event-image" src="${escapeHtml(safeUrl(item.image))}" alt="${escapeHtml(item.title || '')}" loading="lazy" />` : ''}
             <h4>${escapeHtml(item.icon || '')} ${escapeHtml(item.title)}</h4>
             ${item.sub ? `<p class="sub">${escapeHtml(item.sub)}</p>` : ''}
             <p class="time">⏰ ${escapeHtml(item.time)}</p>
@@ -141,28 +148,22 @@
   fillSelect('rsvp-guests', content.rsvp?.guests);
   setText('rsvp-button', content.rsvp?.button);
 
-  document.getElementById('rsvp-form').addEventListener('submit', async (e) => {
+  document.getElementById('rsvp-form').addEventListener('submit', (e) => {
     e.preventDefault();
     const name = document.getElementById('rsvp-name').value;
     const from = document.getElementById('rsvp-from').value;
     const events = document.getElementById('rsvp-events').value;
     const guests = document.getElementById('rsvp-guests').value;
-
-    // Save the RSVP to the server (stored in Neon Postgres)
-    try {
-      await fetch('/api/rsvp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, from, events, guests }),
-      });
-    } catch (err) {
-      console.warn('RSVP save failed:', err.message);
+    const whatsapp = String(content.rsvp?.whatsapp || '').replace(/\D/g, '');
+    const errorEl = document.getElementById('rsvp-error');
+    if (!whatsapp) {
+      errorEl.textContent = 'The host has not configured a WhatsApp number yet.';
+      errorEl.classList.remove('hidden');
+      return;
     }
-
-    const msg = `*New RSVP*%0AName: ${name}%0AFrom: ${from}%0AEvents: ${events}%0AGuests: ${guests}`;
-    if (content.rsvp?.whatsapp) {
-      window.open(`https://wa.me/${content.rsvp.whatsapp}?text=${msg}`, '_blank');
-    }
+    errorEl.classList.add('hidden');
+    const msg = `New RSVP\nName: ${name}\nFrom: ${from}\nEvents: ${events}\nGuests: ${guests}`;
+    window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener,noreferrer');
     document.getElementById('rsvp-form').classList.add('hidden');
     document.getElementById('rsvp-thanks').classList.remove('hidden');
     setText('rsvp-thanks-msg', content.rsvp?.thanks);
@@ -201,7 +202,14 @@
 
   // === HELPERS ===
   function setText(id, val) { const el = document.getElementById(id); if (el && val) el.textContent = val; }
-  function setImg(id, val) { const el = document.getElementById(id); const url = safeUrl(val); if (el && url) el.src = url; }
+  function setImg(id, val) {
+    const el = document.getElementById(id);
+    const url = safeUrl(val);
+    if (el && url) {
+      el.src = url;
+      el.classList.remove('hidden');
+    }
+  }
   function fillSelect(id, arr) {
     const el = document.getElementById(id);
     if (!el || !arr) return;

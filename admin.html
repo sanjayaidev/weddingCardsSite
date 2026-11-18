@@ -68,6 +68,13 @@
     .publish-row { display: flex; align-items: end; gap: 12px; flex-wrap: wrap; }
     .publish-row .field { flex: 1 1 260px; margin: 0; }
     #published-link { display: block; margin-top: 12px; overflow-wrap: anywhere; }
+    .image-editor-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 10px; align-items: end; padding: 14px 0; border-bottom: 1px solid #eee; }
+    .image-editor-row .field { margin: 0; }
+    .image-editor-row .btn { padding: 10px 14px; }
+    .image-editor-group { margin: 20px 0; }
+    .image-editor-group > h3 { margin-bottom: 6px; }
+    .image-editor-group > p { margin-bottom: 8px; font-size: 13px; color: #777; }
+    @media (max-width: 700px) { .image-editor-row { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -167,8 +174,9 @@
       <input type="text" id="content-venue-name" placeholder="Tata Dharamsala" />
     </div>
     <div class="field">
-      <label>WhatsApp Number (for RSVP)</label>
-      <input type="text" id="content-whatsapp" placeholder="919162375557" />
+      <label>WhatsApp number for this invitation (country code + number)</label>
+      <input type="tel" id="content-whatsapp" inputmode="tel" placeholder="919162375557" />
+      <p style="font-size:13px;color:#666;margin-top:6px;">Guest replies open WhatsApp directly and are not saved to the database. This number is saved with your invitation.</p>
     </div>
   </div>
 
@@ -192,6 +200,25 @@
       <input type="text" id="media-venue" placeholder="https://..." />
     </div>
     <div class="field">
+      <label>Banner Image URL</label>
+      <input type="text" id="media-banner" placeholder="https://... or assets/venue.jpg" />
+    </div>
+    <div class="field">
+      <label>Gallery Feature Image URL</label>
+      <input type="text" id="media-gallery-single" placeholder="https://... or assets/gallery/single.jpeg" />
+    </div>
+    <div class="image-editor-group">
+      <h3>Gallery photos</h3>
+      <p>Edit, add, or remove each photo displayed in the gallery.</p>
+      <div id="gallery-image-fields"></div>
+      <button class="btn btn-secondary" type="button" id="add-gallery-image">＋ Add gallery photo</button>
+    </div>
+    <div class="image-editor-group">
+      <h3>Event photos</h3>
+      <p>Set an image for each event shown on the invitation.</p>
+      <div id="event-image-fields"></div>
+    </div>
+    <div class="field">
       <label>Music URL (MP3/M4A)</label>
       <input type="text" id="media-music" placeholder="song.mp4 or https://..." />
     </div>
@@ -204,7 +231,7 @@
   <!-- RSVP PANEL -->
   <div class="panel" id="panel-rsvps">
     <h2>Guest RSVPs <span style="font-size:14px;color:#888;">(<span id="rsvp-count">0</span> total)</span></h2>
-    <p style="margin-bottom:16px;color:#666;">Responses submitted on the invitation page, stored in your Neon database.</p>
+    <p style="margin-bottom:16px;color:#666;">New replies open WhatsApp directly and are not stored. Any older database RSVPs remain available below.</p>
     <button class="btn btn-secondary" onclick="loadRsvps()" style="margin-bottom:16px;">🔄 Refresh list</button>
     <table style="width:100%;border-collapse:collapse;font-size:14px;">
       <thead>
