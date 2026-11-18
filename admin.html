@@ -64,7 +64,7 @@
   <h1>🎨 Invitation Builder</h1>
   
   <div class="info-box">
-    <strong>💡 Tip:</strong> Changes are saved to your browser instantly. Click "Live Preview" to see them in the invitation. Use "Save to GitHub" to publish permanently.
+    <strong>💡 Tip:</strong> This panel is backed by your Node.js server + Neon database. Edits are kept as a local draft automatically — click <strong>"Save to Server"</strong> to publish them to the database for everyone. Enter your admin token below (set <code>ADMIN_TOKEN</code> in <code>.env</code>).
   </div>
 
   <div class="tabs">
@@ -72,6 +72,7 @@
     <button class="tab" data-tab="layouts">2 · Layout</button>
     <button class="tab" data-tab="content">3 · Content</button>
     <button class="tab" data-tab="media">4 · Media & Music</button>
+    <button class="tab" data-tab="rsvps">5 · RSVPs</button>
   </div>
 
   <!-- THEME PANEL -->
@@ -154,34 +155,45 @@
     </div>
   </div>
 
+  <!-- RSVP PANEL -->
+  <div class="panel" id="panel-rsvps">
+    <h2>Guest RSVPs <span style="font-size:14px;color:#888;">(<span id="rsvp-count">0</span> total)</span></h2>
+    <p style="margin-bottom:16px;color:#666;">Responses submitted on the invitation page, stored in your Neon database.</p>
+    <button class="btn btn-secondary" onclick="loadRsvps()" style="margin-bottom:16px;">🔄 Refresh list</button>
+    <table style="width:100%;border-collapse:collapse;font-size:14px;">
+      <thead>
+        <tr style="text-align:left;border-bottom:2px solid #ddd;">
+          <th style="padding:8px;">#</th>
+          <th style="padding:8px;">Name</th>
+          <th style="padding:8px;">From</th>
+          <th style="padding:8px;">Events</th>
+          <th style="padding:8px;">Guests</th>
+          <th style="padding:8px;">When</th>
+        </tr>
+      </thead>
+      <tbody id="rsvp-rows"><tr><td colspan="6">Click "Refresh list" to load RSVPs.</td></tr></tbody>
+    </table>
+  </div>
+
   <!-- ACTIONS -->
   <div class="actions">
     <button class="btn btn-secondary" onclick="openPreview()">👁 Live Preview</button>
-    <button class="btn btn-primary" onclick="saveAll()">💾 Save to GitHub</button>
+    <button class="btn btn-primary" onclick="saveAll()">💾 Save to Server</button>
     <button class="btn btn-secondary" onclick="downloadConfigs()">⬇ Download Configs</button>
-    <button class="btn btn-danger" onclick="resetStorage()">🔄 Reset to Original Files</button>
+    <button class="btn btn-danger" onclick="resetStorage()">🔄 Discard Draft & Reload</button>
   </div>
   <div id="status" class="status"></div>
 
-  <!-- GITHUB -->
+  <!-- SERVER / ADMIN TOKEN -->
   <div class="github-section">
-    <h3>GitHub Connection</h3>
+    <h3>Server Connection</h3>
     <div class="field">
-      <label>Repository (username/repo)</label>
-      <input type="text" id="gh-repo" placeholder="username/weddingcards" />
+      <label>Admin Token</label>
+      <input type="password" id="admin-token" placeholder="matches ADMIN_TOKEN in server .env" />
     </div>
-    <div class="field">
-      <label>Branch</label>
-      <input type="text" id="gh-branch" value="main" />
-    </div>
-    <div class="field">
-      <label>Personal Access Token</label>
-      <input type="password" id="gh-token" placeholder="ghp_..." />
-    </div>
-    <label><input type="checkbox" id="gh-remember" /> Remember token on this device</label>
-    <p style="margin-top: 12px; font-size: 13px; color: #666;">
-      Get token: GitHub → Settings → Developer settings → Personal access tokens → Generate new token (classic)<br>
-      Required scope: <code>repo</code> (full control of private repositories)
+    <p style="margin-top:12px; font-size:13px; color:#666;">
+      Configs and RSVPs are stored in <strong>Neon Postgres</strong> via the Node.js server's <code>/api</code> endpoints.<br>
+      Set <code>DATABASE_URL</code> (Neon connection string) and <code>ADMIN_TOKEN</code> in the server's <code>.env</code> file.
     </p>
   </div>
 
