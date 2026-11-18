@@ -263,7 +263,86 @@ function renderEventsEditor() {
   const container = document.getElementById('events-fields');
   container.replaceChildren();
   if (!CONTENT.events || typeof CONTENT.events !== 'object') CONTENT.events = { label: '', heading: '', days: [] };
-  renderEditorValue(CONTENT.events, container, 'events', 'events');
+  CONTENT.events.days = Array.isArray(CONTENT.events.days) ? CONTENT.events.days : [];
+  container.append(
+    makeEditorField(CONTENT.events.label, 'Events section label', (value) => {
+      CONTENT.events.label = value;
+      persistDraft();
+    }, 'events.label'),
+    makeEditorField(CONTENT.events.heading, 'Events section heading', (value) => {
+      CONTENT.events.heading = value;
+      persistDraft();
+    }, 'events.heading')
+  );
+
+  CONTENT.events.days.forEach((day, dayIndex) => {
+    const dayCard = document.createElement('details');
+    dayCard.className = 'content-editor-section';
+    dayCard.open = true;
+    const daySummary = document.createElement('summary');
+    daySummary.textContent = day.date || `Event day ${dayIndex + 1}`;
+    dayCard.appendChild(daySummary);
+
+    const dateField = makeEditorField(day.date || '', 'Wedding / event date', (value) => {
+      day.date = value;
+      daySummary.textContent = value || `Event day ${dayIndex + 1}`;
+      persistDraft();
+    }, `events.days.${dayIndex}.date`);
+    dayCard.appendChild(dateField);
+
+    day.items = Array.isArray(day.items) ? day.items : [];
+    day.items.forEach((event, eventIndex) => {
+      const eventCard = document.createElement('details');
+      eventCard.className = 'content-editor-item';
+      eventCard.open = true;
+      const eventSummary = document.createElement('summary');
+      eventSummary.textContent = event.title || `Event ${eventIndex + 1}`;
+      eventCard.appendChild(eventSummary);
+
+      const fields = [
+        ['icon', 'Event icon (optional)'],
+        ['title', 'Event name'],
+        ['sub', 'Tagline / subtitle'],
+        ['time', 'Time'],
+        ['theme', 'Outfit / dress code'],
+        ['text', 'Description'],
+        ['image', 'Event image URL'],
+      ];
+      fields.forEach(([property, label]) => {
+        const field = makeEditorField(event[property] || '', label, (value) => {
+          event[property] = value;
+          if (property === 'title') eventSummary.textContent = value || `Event ${eventIndex + 1}`;
+          persistDraft();
+        }, `events.days.${dayIndex}.items.${eventIndex}.${property}`);
+        if (property === 'image') {
+          field.querySelector('input').placeholder = 'https://... or assets/events/photo.jpg';
+        }
+        eventCard.appendChild(field);
+      });
+
+      eventCard.appendChild(makeEditorButton('Remove event', 'btn btn-danger', () => {
+        day.items.splice(eventIndex, 1);
+        renderEventsEditor();
+      }));
+      dayCard.appendChild(eventCard);
+    });
+
+    dayCard.appendChild(makeEditorButton('＋ Add event to this day', 'btn btn-secondary content-editor-add', () => {
+      day.items.push({ icon: '', title: '', sub: '', time: '', theme: '', text: '', image: '' });
+      renderEventsEditor();
+    }));
+    dayCard.appendChild(makeEditorButton('Remove day', 'btn btn-danger content-editor-add', () => {
+      CONTENT.events.days.splice(dayIndex, 1);
+      renderEventsEditor();
+    }));
+    container.appendChild(dayCard);
+  });
+
+  container.appendChild(makeEditorButton('＋ Add event day', 'btn btn-secondary content-editor-add', () => {
+    CONTENT.events.days.push({ date: '', items: [] });
+    renderEventsEditor();
+  }));
+  persistDraft();
 }
 
 function renderEditorValue(value, container, path, editor) {
