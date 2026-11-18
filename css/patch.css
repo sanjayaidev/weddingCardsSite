@@ -1,0 +1,109 @@
+/* ---------- GLOBAL SAFETY: block images centered by default ---------- */
+.section img {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* LAYOUT-CLASSIC (ROYAL) */
+body.layout-classic .hero-image-wrap {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+body.layout-classic .hero-image {
+  max-width: 500px;
+  width: 100%;
+  margin: 0 auto;
+  display: block;
+}
+body.layout-classic .venue-content {
+  justify-items: center;
+}
+body.layout-classic .venue-image {
+  margin: 0 auto;
+  display: block;
+  max-width: 100%;
+}
+body.layout-classic .gallery-grid img {
+  margin: 0 auto;
+}
+
+/* LAYOUT-MODERN */
+body.layout-modern .hero-image-wrap {
+  display: block;
+}
+body.layout-modern .hero-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  margin: 0;
+}
+body.layout-modern .venue-content {
+  justify-items: center;
+}
+body.layout-modern .venue-image {
+  margin: 0 auto;
+  display: block;
+  max-width: 100%;
+}
+body.layout-modern .gallery-grid img {
+  margin: 0 auto;
+}
+
+/* LAYOUT-STORYBOOK (PASTEL) */
+body.layout-storybook .hero-image-wrap {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+body.layout-storybook .hero-image {
+  margin: 0 auto;
+  display: block;
+}
+body.layout-storybook .venue-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+body.layout-storybook .venue-image {
+  margin: 0 auto 20px;
+  display: block;
+  max-width: 100%;
+}
+body.layout-storybook .gallery-grid {
+  justify-content: center;
+  align-items: center;
+}
+body.layout-storybook .gallery-grid img {
+  margin: 0 auto;
+  display: block;
+}
+body.layout-storybook .families-grid {
+  justify-items: center;
+}
+body.layout-storybook .family-card {
+  width: 100%;
+  max-width: 340px;
+}
+
+/* SCROLL REVEAL */
+body.layout-modern.anim-slide-in-horizontal .scroll-reveal.revealed {
+  animation: slideIn 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+body.layout-storybook.anim-zoom-fade .scroll-reveal.revealed {
+  animation: zoomFade 1.2s ease forwards;
+}
+body.layout-classic.anim-fade-up-slow .scroll-reveal.revealed {
+  animation: fadeUp 1.5s ease-out forwards;
+}
+
+/* MODERN: restore day separation lost to display:contents */
+body.layout-modern .event-day h3 { margin-top: 24px; }
+body.layout-modern .event-day:first-child h3 { margin-top: 0; }
+
+@media (max-width: 720px) {
+  body.layout-classic .hero-image { max-width: 100%; }
+  body.layout-storybook .venue-image { width: 100%; max-width: 300px; }
+  body.layout-modern .hero-image { margin: 0; }
+}

@@ -14,13 +14,21 @@ const Templates = (() => {
   }
 
   async function loadAll() {
+    const cardSlug = new URLSearchParams(window.location.search).get('card');
     try {
-      const data = await fetchJson('api/config');
+      const data = cardSlug
+        ? await fetchJson(`/api/cards/${encodeURIComponent(cardSlug)}`)
+        : await fetchJson('/api/config');
       contentConfig = data.content;
       themesConfig = data.themes;
       presetsConfig = data.presets;
       if (!contentConfig || !themesConfig || !presetsConfig) throw new Error('Incomplete config payload');
     } catch (err) {
+      if (cardSlug) {
+        document.title = 'Invitation unavailable';
+        document.body.textContent = 'This invitation is unavailable or has not been published.';
+        throw err;
+      }
       console.warn('API config load failed, falling back to static files:', err.message);
       [contentConfig, themesConfig, presetsConfig] = await Promise.all([
         fetchJson('config/content.json'),
@@ -30,8 +38,9 @@ const Templates = (() => {
     }
     if (new URLSearchParams(window.location.search).get('preview') === '1') {
       try {
+        const draftUser = new URLSearchParams(window.location.search).get('draftUser') || 'admin';
         const draft = ['content', 'themes', 'presets'].map((key) =>
-          JSON.parse(localStorage.getItem(`draft_${key}`))
+          JSON.parse(localStorage.getItem(`draft_${key}_${draftUser}`))
         );
         if (draft.every(Boolean)) {
           [contentConfig, themesConfig, presetsConfig] = draft;

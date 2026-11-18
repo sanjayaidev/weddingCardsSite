@@ -58,14 +58,60 @@
     
     .info-box { background: #e7f3ff; border-left: 4px solid #2196F3; padding: 14px; margin-bottom: 20px; border-radius: 6px; font-size: 14px; color: #004085; }
     .info-box strong { color: #004085; }
+    .account-panel { margin-bottom: 20px; padding: 24px; background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+    .account-panel h2 { margin-bottom: 8px; }
+    .account-panel p { margin-bottom: 14px; color: #666; }
+    .account-fields { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; }
+    .account-fields .field { flex: 1 1 220px; margin-bottom: 0; }
+    .account-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .account-notice { margin-top: 12px; font-size: 14px; }
+    .publish-row { display: flex; align-items: end; gap: 12px; flex-wrap: wrap; }
+    .publish-row .field { flex: 1 1 260px; margin: 0; }
+    #published-link { display: block; margin-top: 12px; overflow-wrap: anywhere; }
   </style>
 </head>
 <body>
   <h1>🎨 Invitation Builder</h1>
   
   <div class="info-box">
-    <strong>💡 Tip:</strong> This panel is backed by your Node.js server + Neon database. Edits are kept as a local draft automatically — click <strong>"Save to Server"</strong> to publish them to the database for everyone. Enter your admin token below (set <code>ADMIN_TOKEN</code> in <code>.env</code>).
+    <strong>💡 Tip:</strong> Create an account to save a private invitation design and publish it at your own unique link. Existing admin tools remain available below.
   </div>
+
+  <section class="account-panel">
+    <h2>Your invitation account</h2>
+    <p id="account-description">Create an account or log in to edit and publish your own invitation.</p>
+    <form id="account-form" class="account-fields">
+      <div class="field">
+        <label for="account-email">Email</label>
+        <input type="email" id="account-email" autocomplete="email" required maxlength="254" />
+      </div>
+      <div class="field">
+        <label for="account-password">Password (at least 8 characters)</label>
+        <input type="password" id="account-password" autocomplete="current-password" required minlength="8" maxlength="128" />
+      </div>
+      <div class="account-actions" id="account-auth-actions">
+        <button class="btn btn-primary" type="button" id="account-register">Create account</button>
+        <button class="btn btn-secondary" type="button" id="account-login">Log in</button>
+      </div>
+    </form>
+    <div id="account-signed-in" class="hidden">
+      <strong id="account-identity"></strong>
+      <button class="btn btn-secondary" type="button" id="account-logout">Log out</button>
+    </div>
+    <p id="account-status" class="account-notice" role="status" aria-live="polite"></p>
+    <div id="publish-controls" class="hidden">
+      <hr style="margin:20px 0;border:0;border-top:1px solid #eee;" />
+      <h3>Publish your invitation</h3>
+      <div class="publish-row">
+        <div class="field">
+          <label for="card-slug">Your unique invitation URL</label>
+          <input type="text" id="card-slug" placeholder="rashi-and-manish" maxlength="60" pattern="[a-zA-Z0-9-]+" />
+        </div>
+        <button class="btn btn-primary" type="button" id="publish-card">Save &amp; publish</button>
+      </div>
+      <a id="published-link" class="hidden" target="_blank" rel="noopener"></a>
+    </div>
+  </section>
 
   <div class="tabs">
     <button class="tab active" data-tab="themes">1 · Color Theme</button>

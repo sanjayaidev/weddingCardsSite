@@ -28,6 +28,33 @@ function createNeonStore(connectionString) {
           created_at TIMESTAMPTZ NOT NULL DEFAULT now()
         )
       `);
+      await sql.query(`
+        CREATE TABLE IF NOT EXISTS invitation_users (
+          id            UUID PRIMARY KEY,
+          email         TEXT NOT NULL UNIQUE,
+          password_hash TEXT NOT NULL,
+          created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+      `);
+      await sql.query(`
+        CREATE TABLE IF NOT EXISTS user_sessions (
+          token_hash TEXT PRIMARY KEY,
+          user_id    UUID NOT NULL REFERENCES invitation_users(id) ON DELETE CASCADE,
+          expires_at TIMESTAMPTZ NOT NULL,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+      `);
+      await sql.query(`
+        CREATE TABLE IF NOT EXISTS invitation_cards (
+          user_id      UUID PRIMARY KEY REFERENCES invitation_users(id) ON DELETE CASCADE,
+          slug         TEXT UNIQUE,
+          content      JSONB NOT NULL,
+          themes       JSONB NOT NULL,
+          presets      JSONB NOT NULL,
+          published_at TIMESTAMPTZ,
+          updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+      `);
     },
 
     async getConfig(key) {
@@ -65,6 +92,90 @@ function createNeonStore(connectionString) {
         [Number(limit) || 500]
       );
       return rows;
+    },
+
+    async createAccount(user, card) {
+      const rows = await sql.query(
+        `WITH new_user AS (
+           INSERT INTO invitation_users (id, email, password_hash)
+           VALUES ($1, $2, $3) RETURNING id, email
+         )
+         INSERT INTO invitation_cards (user_id, content, themes, presets)
+         SELECT id, $4::jsonb, $5::jsonb, $6::jsonb FROM new_user
+         RETURNING user_id`,
+        [user.id, user.email, user.passwordHash, JSON.stringify(card.content), JSON.stringify(card.themes), JSON.stringify(card.presets)]
+      );
+      return { id: rows[0].user_id, email: user.email };
+    },
+
+    async getUserByEmail(email) {
+      const rows = await sql.query(
+        'SELECT id, email, password_hash FROM invitation_users WHERE email = $1',
+        [email]
+      );
+      return rows[0] || null;
+    },
+
+    async createSession(tokenHash, userId, expiresAt) {
+      await sql.query(
+        `INSERT INTO user_sessions (token_hash, user_id, expires_at)
+         VALUES ($1, $2, $3)`,
+        [tokenHash, userId, expiresAt]
+      );
+      await sql.query('DELETE FROM user_sessions WHERE expires_at <= now()');
+    },
+
+    async getSession(tokenHash) {
+      const rows = await sql.query(
+        `SELECT s.user_id, u.email
+         FROM user_sessions s
+         JOIN invitation_users u ON u.id = s.user_id
+         WHERE s.token_hash = $1 AND s.expires_at > now()`,
+        [tokenHash]
+      );
+      return rows[0] || null;
+    },
+
+    async deleteSession(tokenHash) {
+      await sql.query('DELETE FROM user_sessions WHERE token_hash = $1', [tokenHash]);
+    },
+
+    async getCard(userId) {
+      const rows = await sql.query(
+        `SELECT content, themes, presets, slug, published_at
+         FROM invitation_cards WHERE user_id = $1`,
+        [userId]
+      );
+      return rows[0] || null;
+    },
+
+    async saveCard(userId, card) {
+      await sql.query(
+        `UPDATE invitation_cards
+         SET content = $2::jsonb, themes = $3::jsonb, presets = $4::jsonb, updated_at = now()
+         WHERE user_id = $1`,
+        [userId, JSON.stringify(card.content), JSON.stringify(card.themes), JSON.stringify(card.presets)]
+      );
+    },
+
+    async publishCard(userId, slug) {
+      const rows = await sql.query(
+        `UPDATE invitation_cards
+         SET slug = $2, published_at = now(), updated_at = now()
+         WHERE user_id = $1
+         RETURNING slug, published_at`,
+        [userId, slug]
+      );
+      return rows[0] || null;
+    },
+
+    async getPublishedCard(slug) {
+      const rows = await sql.query(
+        `SELECT content, themes, presets, slug
+         FROM invitation_cards WHERE slug = $1 AND published_at IS NOT NULL`,
+        [slug]
+      );
+      return rows[0] || null;
     },
   };
 }

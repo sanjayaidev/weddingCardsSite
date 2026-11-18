@@ -11,7 +11,7 @@
   const gateScreen = document.getElementById('gate-screen');
   const invitation = document.getElementById('invitation');
 
-  if (content.gate?.image) gateImage.src = content.gate.image;
+  if (content.gate?.image) gateImage.src = safeUrl(content.gate.image);
   if (content.gate?.prompt) gateBtn.textContent = content.gate.prompt;
 
   gateBtn.addEventListener('click', () => {
@@ -24,8 +24,9 @@
   // === MUSIC ===
   const audio = document.getElementById('bg-music');
   function startMusic() {
-    if (content.music?.src) {
-      audio.src = content.music.src;
+    const musicUrl = safeUrl(content.music?.src);
+    if (musicUrl) {
+      audio.src = musicUrl;
       audio.volume = content.music.volume ?? 0.6;
       audio.play().catch(() => {});
     }
@@ -41,7 +42,7 @@
 
   const datesEl = document.getElementById('hero-dates');
   if (content.hero?.dates) {
-    datesEl.innerHTML = content.hero.dates.map(d => `<div>${d}</div>`).join('');
+    datesEl.innerHTML = content.hero.dates.map(d => `<div>${escapeHtml(d)}</div>`).join('');
   }
 
   // Countdown
@@ -70,7 +71,7 @@
   const galleryGrid = document.getElementById('gallery-grid');
   if (content.gallery?.images) {
     galleryGrid.innerHTML = content.gallery.images.map(img =>
-      `<img src="${img.src}" alt="${img.alt || ''}" class="scroll-reveal" loading="lazy" />`
+      `<img src="${escapeHtml(safeUrl(img.src))}" alt="${escapeHtml(img.alt || '')}" class="scroll-reveal" loading="lazy" />`
     ).join('');
   }
 
@@ -81,10 +82,10 @@
   if (content.families) {
     const renderFamily = (f) => `
       <div class="family-card scroll-reveal">
-        <h3>${f.title}</h3>
-        <p><strong>${f.name}</strong></p>
-        <p>${f.relation}</p>
-        <p>${f.parents.join(' & ')}</p>
+        <h3>${escapeHtml(f.title)}</h3>
+        <p><strong>${escapeHtml(f.name)}</strong></p>
+        <p>${escapeHtml(f.relation)}</p>
+        <p>${f.parents.map(escapeHtml).join(' &amp; ')}</p>
       </div>`;
     familiesGrid.innerHTML = renderFamily(content.families.bride) + renderFamily(content.families.groom);
   }
@@ -96,14 +97,14 @@
   if (content.events?.days) {
     eventsContainer.innerHTML = content.events.days.map(day => `
       <div class="event-day">
-        <h3>${day.date}</h3>
+        <h3>${escapeHtml(day.date)}</h3>
         ${day.items.map(item => `
           <div class="event-item scroll-reveal">
-            <h4>${item.icon || ''} ${item.title}</h4>
-            ${item.sub ? `<p class="sub">${item.sub}</p>` : ''}
-            <p class="time">⏰ ${item.time}</p>
-            ${item.theme ? `<p class="theme">👗 ${item.theme}</p>` : ''}
-            <p class="text">${item.text}</p>
+            <h4>${escapeHtml(item.icon || '')} ${escapeHtml(item.title)}</h4>
+            ${item.sub ? `<p class="sub">${escapeHtml(item.sub)}</p>` : ''}
+            <p class="time">⏰ ${escapeHtml(item.time)}</p>
+            ${item.theme ? `<p class="theme">👗 ${escapeHtml(item.theme)}</p>` : ''}
+            <p class="text">${escapeHtml(item.text)}</p>
           </div>
         `).join('')}
       </div>
@@ -120,10 +121,11 @@
   setImg('venue-image', content.venue?.image);
   setText('venue-name', content.venue?.name);
   const addrEl = document.getElementById('venue-address');
-  if (content.venue?.address) addrEl.innerHTML = content.venue.address.join('<br>');
+  if (content.venue?.address) addrEl.innerHTML = content.venue.address.map(escapeHtml).join('<br>');
   const mapsBtn = document.getElementById('venue-maps');
-  if (content.venue?.mapsUrl) {
-    mapsBtn.href = content.venue.mapsUrl;
+  const mapsUrl = safeUrl(content.venue?.mapsUrl);
+  if (mapsUrl) {
+    mapsBtn.href = mapsUrl;
     mapsBtn.textContent = content.venue.mapsText || '📍 Open in Google Maps';
   }
 
@@ -148,7 +150,7 @@
 
     // Save the RSVP to the server (stored in Neon Postgres)
     try {
-      await fetch('api/rsvp', {
+      await fetch('/api/rsvp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, from, events, guests }),
@@ -172,8 +174,8 @@
   setText('footer-blessing', content.footer?.blessing);
   const leftEl = document.getElementById('footer-left');
   const rightEl = document.getElementById('footer-right');
-  if (content.footer?.left) leftEl.innerHTML = content.footer.left.join('<br>');
-  if (content.footer?.right) rightEl.innerHTML = content.footer.right.join('<br>');
+  if (content.footer?.left) leftEl.innerHTML = content.footer.left.map(escapeHtml).join('<br>');
+  if (content.footer?.right) rightEl.innerHTML = content.footer.right.map(escapeHtml).join('<br>');
   setText('footer-regards', content.footer?.regards);
 
   // === SCROLL REVEAL ===
@@ -199,11 +201,25 @@
 
   // === HELPERS ===
   function setText(id, val) { const el = document.getElementById(id); if (el && val) el.textContent = val; }
-  function setImg(id, val) { const el = document.getElementById(id); if (el && val) el.src = val; }
+  function setImg(id, val) { const el = document.getElementById(id); const url = safeUrl(val); if (el && url) el.src = url; }
   function fillSelect(id, arr) {
     const el = document.getElementById(id);
     if (!el || !arr) return;
-    el.innerHTML = arr.map(v => `<option value="${v}">${v}</option>`).join('');
+    el.innerHTML = arr.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+  }
+  function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    })[char]);
+  }
+  function safeUrl(value) {
+    if (typeof value !== 'string' || !value.trim()) return '';
+    try {
+      const url = new URL(value, window.location.href);
+      return url.protocol === 'http:' || url.protocol === 'https:' ? value : '';
+    } catch {
+      return '';
+    }
   }
 
   // === PETALS EFFECT ===

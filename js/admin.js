@@ -3,6 +3,9 @@
  * edits locally with autosave, and publishes to the database with "Save to Server".
  */
 let CONTENT, THEMES, PRESETS;
+let USER = null;
+let ACCOUNT_MODE = false;
+let currentSlug = '';
 
 // === INITIALIZATION ===
 (async function initAdmin() {
@@ -11,7 +14,6 @@ let CONTENT, THEMES, PRESETS;
     if (!res.ok) throw new Error('api/config -> ' + res.status);
     const data = await res.json();
     [CONTENT, THEMES, PRESETS] = [data.content, data.themes, data.presets];
-    restoreDraft();
     showStatus('✅ Loaded current configuration from the server (Neon).', 'success');
   } catch (err) {
     // Fallback: static seed files
@@ -21,7 +23,6 @@ let CONTENT, THEMES, PRESETS;
         fetch('config/themes.json').then(r => r.json()),
         fetch('config/presets.json').then(r => r.json()),
       ]);
-      restoreDraft();
       showStatus('⚠️ Could not reach the API — loaded bundled seed files. Edits can still be saved.', 'info');
     } catch (e2) {
       showStatus('❌ Failed to load configuration: ' + e2.message, 'error');
@@ -29,6 +30,7 @@ let CONTENT, THEMES, PRESETS;
     }
   }
 
+  await initializeAccount();
   renderThemes();
   renderLayouts();
   loadContentFields();
@@ -48,28 +50,137 @@ document.querySelectorAll('.tab').forEach(tab => {
 
 // === LOCAL DRAFT PERSISTENCE (unsaved edits survive refresh) ===
 function persistDraft() {
-  localStorage.setItem('draft_content', JSON.stringify(CONTENT));
-  localStorage.setItem('draft_themes', JSON.stringify(THEMES));
-  localStorage.setItem('draft_presets', JSON.stringify(PRESETS));
+  localStorage.setItem(`draft_content_${draftUser()}`, JSON.stringify(CONTENT));
+  localStorage.setItem(`draft_themes_${draftUser()}`, JSON.stringify(THEMES));
+  localStorage.setItem(`draft_presets_${draftUser()}`, JSON.stringify(PRESETS));
 }
 
 function clearDraft() {
-  localStorage.removeItem('draft_content');
-  localStorage.removeItem('draft_themes');
-  localStorage.removeItem('draft_presets');
+  localStorage.removeItem(`draft_content_${draftUser()}`);
+  localStorage.removeItem(`draft_themes_${draftUser()}`);
+  localStorage.removeItem(`draft_presets_${draftUser()}`);
+  if (draftUser() === 'admin') {
+    ['content', 'themes', 'presets'].forEach((key) => localStorage.removeItem(`draft_${key}`));
+  }
+}
+
+function draftUser() {
+  return USER?.id || 'admin';
 }
 
 function restoreDraft() {
   try {
-    const draft = ['content', 'themes', 'presets'].map((key) =>
-      JSON.parse(localStorage.getItem(`draft_${key}`))
+    let draft = ['content', 'themes', 'presets'].map((key) =>
+      JSON.parse(localStorage.getItem(`draft_${key}_${draftUser()}`))
     );
+    if (draftUser() === 'admin' && !draft.some(Boolean)) {
+      draft = ['content', 'themes', 'presets'].map((key) =>
+        JSON.parse(localStorage.getItem(`draft_${key}`))
+      );
+    }
     if (draft.every(Boolean)) {
       [CONTENT, THEMES, PRESETS] = draft;
+      if (draftUser() === 'admin') {
+        persistDraft();
+        ['content', 'themes', 'presets'].forEach((key) => localStorage.removeItem(`draft_${key}`));
+      }
     }
   } catch (err) {
     showStatus('⚠️ Could not restore the saved draft: ' + err.message, 'error');
   }
+}
+
+async function initializeAccount() {
+  document.getElementById('account-form').addEventListener('submit', (event) => {
+    event.preventDefault();
+    authenticate('login');
+  });
+  document.getElementById('account-register').addEventListener('click', () => authenticate('register'));
+  document.getElementById('account-login').addEventListener('click', () => authenticate('login'));
+  document.getElementById('account-logout').addEventListener('click', logout);
+  document.getElementById('publish-card').addEventListener('click', publishCard);
+
+  try {
+    const response = await fetch('/api/auth/session');
+    if (!response.ok) throw new Error('Could not check account session.');
+    const { user } = await response.json();
+    if (user) {
+      await useAccount(user);
+      setAccountMessage('Your invitation is private until you publish it.');
+    } else {
+      restoreDraft();
+    }
+  } catch (err) {
+    restoreDraft();
+    setAccountMessage(err.message);
+  }
+}
+
+async function authenticate(action) {
+  if (!document.getElementById('account-form').reportValidity()) return;
+  const email = document.getElementById('account-email').value.trim();
+  const password = document.getElementById('account-password').value;
+  try {
+    setAccountMessage(action === 'register' ? 'Creating your account…' : 'Logging in…');
+    const response = await fetch(`/api/auth/${action}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Account request failed.');
+    await useAccount(data.user);
+    setAccountMessage('Your private invitation is ready to design.');
+    showStatus('✅ Your personal invitation is loaded. Changes are saved privately to your account.', 'success');
+  } catch (err) {
+    setAccountMessage(err.message);
+  }
+}
+
+async function useAccount(user) {
+  const response = await fetch('/api/me/card');
+  const card = await response.json();
+  if (!response.ok) throw new Error(card.error || 'Could not load your invitation.');
+  USER = user;
+  ACCOUNT_MODE = true;
+  CONTENT = card.content;
+  THEMES = card.themes;
+  PRESETS = card.presets;
+  currentSlug = card.slug || '';
+  restoreDraft();
+  renderThemes();
+  renderLayouts();
+  loadContentFields();
+  loadMediaFields();
+  document.getElementById('account-auth-actions').classList.add('hidden');
+  document.getElementById('account-form').classList.add('hidden');
+  document.getElementById('account-signed-in').classList.remove('hidden');
+  document.getElementById('account-identity').textContent = user.email;
+  document.getElementById('account-description').textContent = 'Design your own invitation. Only your account can edit it.';
+  document.getElementById('publish-controls').classList.remove('hidden');
+  document.getElementById('card-slug').value = currentSlug;
+  const link = document.getElementById('published-link');
+  if (currentSlug) {
+    link.href = `${location.origin}/?card=${encodeURIComponent(currentSlug)}`;
+    link.textContent = `Published invitation: ${link.href}`;
+    link.classList.remove('hidden');
+  } else {
+    link.classList.add('hidden');
+  }
+}
+
+async function logout() {
+  try {
+    const response = await fetch('/api/auth/logout', { method: 'POST' });
+    if (!response.ok) throw new Error('Could not log out.');
+    location.reload();
+  } catch (err) {
+    setAccountMessage(err.message);
+  }
+}
+
+function setAccountMessage(message) {
+  document.getElementById('account-status').textContent = message;
 }
 
 // === THEMES ===
@@ -195,6 +306,16 @@ async function saveAll() {
   saveContentFields();
   saveMediaFields();
 
+  if (ACCOUNT_MODE) {
+    try {
+      await savePersonalCard();
+      showStatus('✅ Your invitation is saved privately to your account.', 'success');
+    } catch (err) {
+      showStatus('❌ ' + err.message, 'error');
+    }
+    return;
+  }
+
   const token = getAdminToken();
   const sections = [['content', CONTENT], ['themes', THEMES], ['presets', PRESETS]];
 
@@ -218,6 +339,44 @@ async function saveAll() {
     showStatus('✅ All configs saved to the database! The invitation now reflects these changes for everyone.', 'success');
   } catch (err) {
     showStatus('❌ ' + err.message, 'error');
+  }
+}
+
+async function savePersonalCard() {
+  const response = await fetch('/api/me/card', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content: CONTENT, themes: THEMES, presets: PRESETS }),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Could not save your invitation.');
+  clearDraft();
+}
+
+async function publishCard() {
+  saveContentFields();
+  saveMediaFields();
+  const slug = document.getElementById('card-slug').value.trim();
+  try {
+    setAccountMessage('Saving and publishing your invitation…');
+    await savePersonalCard();
+    const response = await fetch('/api/me/card/publish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Could not publish your invitation.');
+    currentSlug = data.slug;
+    document.getElementById('card-slug').value = data.slug;
+    const link = document.getElementById('published-link');
+    const publishedUrl = `${location.origin}${data.path}`;
+    link.href = publishedUrl;
+    link.textContent = `Published invitation: ${publishedUrl}`;
+    link.classList.remove('hidden');
+    setAccountMessage('Your invitation is live at the link below.');
+  } catch (err) {
+    setAccountMessage(err.message);
   }
 }
 
@@ -256,7 +415,7 @@ function escapeHtml(s) {
 function openPreview() {
   saveContentFields();
   saveMediaFields();
-  window.open('index.html?preview=1&t=' + Date.now(), '_blank');
+  window.open(`index.html?preview=1&draftUser=${encodeURIComponent(draftUser())}&t=${Date.now()}`, '_blank');
 }
 
 // === DOWNLOAD ===
