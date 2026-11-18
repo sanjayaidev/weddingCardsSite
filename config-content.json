@@ -1,0 +1,151 @@
+{
+  "meta": {
+    "title": "Rashi & Manish — You're Invited 🙏"
+  },
+  "music": {
+    "src": "song.mp4",
+    "volume": 0.6
+  },
+  "gate": {
+    "image": "assets/ganesh.jpg",
+    "prompt": "Open the invitation"
+  },
+  "hero": {
+    "image": "https://i.postimg.cc/L6mGygzJ/tem.jpg",
+    "tagline": "Shubh Vivah · Together with their families",
+    "name1": "Rashi",
+    "name2": "Manish",
+    "invite": "invite you to celebrate",
+    "dates": ["24th November 2026", "25th November 2026"],
+    "venue": "",
+    "countdownTo": "2026-11-24T12:30:00+05:30",
+    "scroll": "Scroll to explore ↓"
+  },
+  "story": {
+    "heading": "two hearts, one beautiful journey....",
+    "image": "https://i.postimg.cc/vHGCPxW8/bg.jpg",
+    "quote": "\"We are delighted to invite you to celebrate the beginning of our forever\"",
+    "by": "— Rashi & Manish"
+  },
+  "gallery": {
+    "label": "Our moments",
+    "heading": "Little glimpses",
+    "images": [
+      { "src": "assets/gallery/1.jpeg", "alt": "Photo 1" },
+      { "src": "assets/gallery/2.jpeg", "alt": "Photo 2" },
+      { "src": "assets/gallery/3.jpeg", "alt": "Photo 3" },
+      { "src": "assets/gallery/4.jpeg", "alt": "Photo 4" },
+      { "src": "assets/gallery/5.jpeg", "alt": "Photo 5" },
+      { "src": "assets/gallery/6.jpeg", "alt": "Photo 6" },
+      { "src": "assets/gallery/7.jpeg", "alt": "Photo 7" },
+      { "src": "assets/gallery/8.jpeg", "alt": "Photo 8" }
+    ],
+    "single": {
+      "image": "assets/gallery/single.jpeg",
+      "caption": "Looking forward"
+    }
+  },
+  "families": {
+    "label": "With love & blessings",
+    "heading": "Our Families",
+    "bride": {
+      "title": "Bride's Family",
+      "name": "Rashi",
+      "relation": "Daughter of",
+      "parents": ["Smt. Rajni Devi Fitkariwala", "Shri Deepak Kumar Fitkariwala"]
+    },
+    "groom": {
+      "title": "Groom's Family",
+      "name": "Manish",
+      "relation": "Son of",
+      "parents": ["Smt. Seema Devi Agarwal", "Shri Rajesh Agarwal"]
+    }
+  },
+  "events": {
+    "label": "24 & 25 November 2026",
+    "heading": "Celebrations",
+    "days": [
+      {
+        "date": "Tuesday, 24th November 2026",
+        "items": [
+          {
+            "icon": "🪔", "title": "Mayra Ceremony", "sub": "Pihar Ri Pehchan",
+            "time": "12:30 PM onwards", "theme": "Red & Cream",
+            "colors": ["#d4122e", "#fff1d0"],
+            "text": "Bhat bharan ne aayo, Biro maharo — a heartfelt ceremony of blessings and gifts from the maternal family. Dress in red & cream.",
+            "image": "assets/events/mayra.jpg"
+          },
+          {
+            "icon": "🎶", "title": "Sangeet Night", "sub": "Nachde Ne Saare",
+            "time": "7:00 PM onwards", "theme": "Bollywood Bling",
+            "colors": ["#ff2e93", "#ffc400"],
+            "text": "Music, dance and pure joy. Come ready to shine in your sparkliest Bollywood best.",
+            "image": "assets/events/sangeet.jpg"
+          }
+        ]
+      },
+      {
+        "date": "Wednesday, 25th November 2026",
+        "items": [
+          {
+            "icon": "🌼", "title": "Haldi Ceremony", "sub": "Golden Glow",
+            "time": "11:00 AM onwards", "theme": "Lavender",
+            "colors": ["#9b6bdc", "#e4d4ff"],
+            "text": "Turmeric, laughter and blessings. Dress in shades of lavender.",
+            "image": "assets/events/haldi.jpg"
+          },
+          {
+            "icon": "🐎", "title": "Baraat", "sub": "Baraatiyon Ka Swagat",
+            "time": "7:00 PM onwards",
+            "colors": ["#ff7a00", "#ffd000"],
+            "text": "Soulmates & Seven Vows begins with the groom's grand procession — join us with dhol, dance and delight.",
+            "image": "assets/events/baarat.jpg"
+          },
+          {
+            "icon": "✨", "title": "Reception", "sub": "The Floral Promise & The Rajwada Affair",
+            "time": "8:00 PM onwards",
+            "colors": ["#e11d74", "#ffb703"],
+            "text": "An evening of dinner, blessings and celebration with family and friends.",
+            "image": "assets/events/reception.jpg"
+          }
+        ]
+      }
+    ]
+  },
+  "banner": {
+    "image": "https://i.postimg.cc/x17SXjB1/Wide-angle-of-Galigopuram.jpg",
+    "quote": "\"We await your gracious presence\""
+  },
+  "venue": {
+    "label": "Find us here",
+    "heading": "Venue",
+    "image": "https://i.postimg.cc/L6mGygzY/tatad.webp",
+    "name": "Tata Dharamsala",
+    "address": ["Basukinath Dham", "Jharkhand 814118"],
+    "mapsUrl": "https://maps.app.goo.gl/FnWebm5mGY61im5i7?g_st=aw",
+    "mapsEmbedUrl": "https://maps.google.com/maps?cid=5647479007872400816&output=embed",
+    "mapsText": "📍 Open in Google Maps"
+  },
+  "rsvp": {
+    "label": "We'd love to know",
+    "heading": "RSVP",
+    "intro": "Your presence means the world to us. Please let us know by {deadline}.",
+    "deadline": "15th November 2026",
+    "mode": "whatsapp",
+    "whatsapp": "919162375557",
+    "from": ["Ladki wale", "Ladke wale"],
+    "events": ["All events 🎉", "Mayra only", "Sangeet only", "Haldi only", "Baarat only", "Reception only", "Mayra + Sangeet", "Haldi + Baarat + Reception"],
+    "guests": ["1", "2", "3", "4", "5+"],
+    "button": "Confirm on WhatsApp 🙏",
+    "thanks": "🌸 We're overjoyed — see you there!",
+    "thanksBy": "Rashi & Manish",
+    "error": "Couldn't send your reply. Please try again or message us on WhatsApp."
+  },
+  "footer": {
+    "names": "❧ Rashi & Manish ❧",
+    "blessing": "With blessing of",
+    "left": ["Smt. Lila Devi", "Shri. Narayan Pd Fitkariwala", "Smt. Rajni Devi Fitkariwala"],
+    "right": ["Shri. Deepak Kumar Fitkariwala", "Smt. Vandana Devi Fitkariwala", "Shri. Chandra Shekhar Fitkariwala"],
+    "regards": "Awaiting eyes 👀\nHemant Kumar Fitkariwala\nNiyati Fitkariwala\nSambridh Fitkariwala"
+  }
+}

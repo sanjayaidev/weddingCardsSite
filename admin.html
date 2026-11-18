@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin · Invitation Builder</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f4f4f7; color: #222; padding: 20px; max-width: 1200px; margin: 0 auto; }
+    h1 { margin-bottom: 20px; font-size: 28px; }
+    h2 { margin-bottom: 16px; font-size: 22px; color: #333; }
+    h3 { margin-bottom: 12px; font-size: 18px; color: #555; }
+    
+    .tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #ddd; flex-wrap: wrap; }
+    .tab { padding: 12px 20px; cursor: pointer; background: none; border: none; font-size: 15px; font-weight: 600; color: #666; border-bottom: 3px solid transparent; transition: all 0.2s; }
+    .tab:hover { color: #c1121f; }
+    .tab.active { color: #c1121f; border-bottom-color: #c1121f; }
+    
+    .panel { display: none; background: #fff; padding: 28px; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-bottom: 20px; }
+    .panel.active { display: block; }
+    
+    .field { margin-bottom: 18px; }
+    .field label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px; color: #444; }
+    .field input, .field textarea, .field select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; font-family: inherit; transition: border-color 0.2s; }
+    .field input:focus, .field textarea:focus, .field select:focus { outline: none; border-color: #c1121f; }
+    .field textarea { min-height: 100px; resize: vertical; }
+    .field input[type="range"] { padding: 0; }
+    
+    .preset-card { border: 2px solid #eee; padding: 18px; border-radius: 10px; margin-bottom: 12px; cursor: pointer; transition: all 0.25s; }
+    .preset-card:hover { border-color: #c1121f; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(193,18,31,0.15); }
+    .preset-card.selected { border-color: #c1121f; background: #fff5f5; }
+    .preset-card h4 { margin-bottom: 6px; font-size: 17px; }
+    .preset-card p { font-size: 13px; color: #666; margin-bottom: 8px; }
+    .preset-card .meta { font-size: 12px; color: #999; margin-top: 8px; }
+    
+    .color-swatches { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+    .swatch { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #ccc; }
+    
+    .actions { margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap; padding: 20px; background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+    .btn { padding: 14px 26px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; transition: all 0.2s; }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .btn-primary { background: #c1121f; color: #fff; }
+    .btn-primary:hover { background: #a00f1a; }
+    .btn-secondary { background: #eee; color: #333; }
+    .btn-secondary:hover { background: #ddd; }
+    .btn-danger { background: #dc3545; color: #fff; }
+    .btn-danger:hover { background: #c82333; }
+    
+    .status { margin-top: 16px; padding: 14px; border-radius: 8px; font-size: 14px; display: none; font-weight: 500; }
+    .status.success { background: #d4edda; color: #155724; display: block; border: 1px solid #c3e6cb; }
+    .status.error { background: #f8d7da; color: #721c24; display: block; border: 1px solid #f5c6cb; }
+    .status.info { background: #d1ecf1; color: #0c5460; display: block; border: 1px solid #bee5eb; }
+    
+    .github-section { margin-top: 30px; padding: 24px; background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+    .github-section h3 { margin-bottom: 16px; color: #333; }
+    .github-section label { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 14px; color: #555; cursor: pointer; }
+    .github-section input[type="checkbox"] { width: auto; margin: 0; }
+    
+    .info-box { background: #e7f3ff; border-left: 4px solid #2196F3; padding: 14px; margin-bottom: 20px; border-radius: 6px; font-size: 14px; color: #004085; }
+    .info-box strong { color: #004085; }
+  </style>
+</head>
+<body>
+  <h1>🎨 Invitation Builder</h1>
+  
+  <div class="info-box">
+    <strong>💡 Tip:</strong> Changes are saved to your browser instantly. Click "Live Preview" to see them in the invitation. Use "Save to GitHub" to publish permanently.
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="themes">1 · Color Theme</button>
+    <button class="tab" data-tab="layouts">2 · Layout</button>
+    <button class="tab" data-tab="content">3 · Content</button>
+    <button class="tab" data-tab="media">4 · Media & Music</button>
+  </div>
+
+  <!-- THEME PANEL -->
+  <div class="panel active" id="panel-themes">
+    <h2>Choose a Color Theme</h2>
+    <p style="margin-bottom: 20px; color: #666;">Click a theme to select it. Changes apply instantly in the preview.</p>
+    <div id="themes-list"></div>
+  </div>
+
+  <!-- LAYOUT PANEL -->
+  <div class="panel" id="panel-layouts">
+    <h2>Choose a Layout</h2>
+    <p style="margin-bottom: 20px; color: #666;">Each layout has its own structure, fonts, and animation style.</p>
+    <div id="layouts-list"></div>
+  </div>
+
+  <!-- CONTENT PANEL -->
+  <div class="panel" id="panel-content">
+    <h2>Edit Content</h2>
+    <div class="field">
+      <label>Page Title</label>
+      <input type="text" id="content-title" placeholder="Rashi & Manish — You're Invited" />
+    </div>
+    <div class="field">
+      <label>Bride's Name</label>
+      <input type="text" id="content-name1" placeholder="Rashi" />
+    </div>
+    <div class="field">
+      <label>Groom's Name</label>
+      <input type="text" id="content-name2" placeholder="Manish" />
+    </div>
+    <div class="field">
+      <label>Tagline</label>
+      <input type="text" id="content-tagline" placeholder="Shubh Vivah · Together with their families" />
+    </div>
+    <div class="field">
+      <label>Story Heading</label>
+      <input type="text" id="content-story-heading" placeholder="two hearts, one beautiful journey...." />
+    </div>
+    <div class="field">
+      <label>Story Quote</label>
+      <textarea id="content-story-quote" placeholder=""We are delighted to invite you...""></textarea>
+    </div>
+    <div class="field">
+      <label>Venue Name</label>
+      <input type="text" id="content-venue-name" placeholder="Tata Dharamsala" />
+    </div>
+    <div class="field">
+      <label>WhatsApp Number (for RSVP)</label>
+      <input type="text" id="content-whatsapp" placeholder="919162375557" />
+    </div>
+  </div>
+
+  <!-- MEDIA PANEL -->
+  <div class="panel" id="panel-media">
+    <h2>Photos & Music</h2>
+    <div class="field">
+      <label>Gate Image URL</label>
+      <input type="text" id="media-gate" placeholder="https://... or assets/ganesh.jpg" />
+    </div>
+    <div class="field">
+      <label>Hero Image URL</label>
+      <input type="text" id="media-hero" placeholder="https://..." />
+    </div>
+    <div class="field">
+      <label>Story Background URL</label>
+      <input type="text" id="media-story" placeholder="https://..." />
+    </div>
+    <div class="field">
+      <label>Venue Image URL</label>
+      <input type="text" id="media-venue" placeholder="https://..." />
+    </div>
+    <div class="field">
+      <label>Music URL (MP3/M4A)</label>
+      <input type="text" id="media-music" placeholder="song.mp4 or https://..." />
+    </div>
+    <div class="field">
+      <label>Music Volume: <span id="vol-label">60%</span></label>
+      <input type="range" id="media-volume" min="0" max="1" step="0.05" value="0.6" />
+    </div>
+  </div>
+
+  <!-- ACTIONS -->
+  <div class="actions">
+    <button class="btn btn-secondary" onclick="openPreview()">👁 Live Preview</button>
+    <button class="btn btn-primary" onclick="saveAll()">💾 Save to GitHub</button>
+    <button class="btn btn-secondary" onclick="downloadConfigs()">⬇ Download Configs</button>
+    <button class="btn btn-danger" onclick="resetStorage()">🔄 Reset to Original Files</button>
+  </div>
+  <div id="status" class="status"></div>
+
+  <!-- GITHUB -->
+  <div class="github-section">
+    <h3>GitHub Connection</h3>
+    <div class="field">
+      <label>Repository (username/repo)</label>
+      <input type="text" id="gh-repo" placeholder="username/weddingcards" />
+    </div>
+    <div class="field">
+      <label>Branch</label>
+      <input type="text" id="gh-branch" value="main" />
+    </div>
+    <div class="field">
+      <label>Personal Access Token</label>
+      <input type="password" id="gh-token" placeholder="ghp_..." />
+    </div>
+    <label><input type="checkbox" id="gh-remember" /> Remember token on this device</label>
+    <p style="margin-top: 12px; font-size: 13px; color: #666;">
+      Get token: GitHub → Settings → Developer settings → Personal access tokens → Generate new token (classic)<br>
+      Required scope: <code>repo</code> (full control of private repositories)
+    </p>
+  </div>
+
+  <script src="js/admin.js"></script>
+</body>
+</html>

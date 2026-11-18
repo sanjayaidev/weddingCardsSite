@@ -1,0 +1,50 @@
+{
+  "active": {
+    "theme": "royal-rajwada",
+    "layout": "classic-center"
+  },
+  "layouts": [
+    {
+      "id": "classic-center",
+      "name": "Classic Centered",
+      "description": "Symmetrical hero, centered text, traditional feel",
+      "cssFile": "css/template-royal.css",
+      "bodyClass": "layout-classic",
+      "animation": "fade-up-slow",
+      "structure": {
+        "heroStyle": "centered",
+        "galleryStyle": "grid-4",
+        "eventsStyle": "timeline-vertical",
+        "familiesStyle": "side-by-side"
+      }
+    },
+    {
+      "id": "modern-grid",
+      "name": "Modern Asymmetric",
+      "description": "Grid-based, split-screen hero, clean lines",
+      "cssFile": "css/template-modern.css",
+      "bodyClass": "layout-modern",
+      "animation": "slide-in-horizontal",
+      "structure": {
+        "heroStyle": "split",
+        "galleryStyle": "masonry",
+        "eventsStyle": "cards-horizontal",
+        "familiesStyle": "stacked"
+      }
+    },
+    {
+      "id": "storybook-masonry",
+      "name": "Pastel Storybook",
+      "description": "Scrapbook feel, overlapping polaroids, soft bouncy animations",
+      "cssFile": "css/template-pastel.css",
+      "bodyClass": "layout-storybook",
+      "animation": "zoom-fade",
+      "structure": {
+        "heroStyle": "stacked-soft",
+        "galleryStyle": "polaroid-scatter",
+        "eventsStyle": "cards-stacked",
+        "familiesStyle": "cards-tilted"
+      }
+    }
+  ]
+}

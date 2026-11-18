@@ -1,0 +1,88 @@
+{
+  "themes": [
+    {
+      "id": "royal-rajwada",
+      "name": "Royal Rajwada",
+      "description": "Deep red, gold & cream — classic Indian wedding grandeur",
+      "colors": {
+        "primary": "#c1121f",
+        "secondary": "#f2a900",
+        "accent": "#d81b60",
+        "background": "#fff9f0",
+        "surface": "#ffffff",
+        "text": "#3a1f1f",
+        "muted": "#8a6a5a"
+      },
+      "fonts": {
+        "heading": "'Cinzel', serif",
+        "body": "'Cormorant Garamond', serif",
+        "script": "'Great Vibes', cursive"
+      },
+      "effects": {
+        "petals": { "marigold": 26, "jasmine": 16 },
+        "trail": {
+          "enabled": true,
+          "colors": ["#f6b21e", "#e8721c", "#fbd25a", "#e0607e", "#ffffff"],
+          "size": 26,
+          "spacing": 30
+        }
+      }
+    },
+    {
+      "id": "modern-minimal",
+      "name": "Modern Minimal",
+      "description": "Emerald, champagne & charcoal — clean and contemporary",
+      "colors": {
+        "primary": "#0f5132",
+        "secondary": "#f5e6d3",
+        "accent": "#d4af37",
+        "background": "#ffffff",
+        "surface": "#fafaf7",
+        "text": "#1a1a1a",
+        "muted": "#6b6b6b"
+      },
+      "fonts": {
+        "heading": "'Montserrat', sans-serif",
+        "body": "'Lato', sans-serif",
+        "script": "'Cormorant Garamond', serif"
+      },
+      "effects": {
+        "petals": { "marigold": 0, "jasmine": 0 },
+        "trail": {
+          "enabled": true,
+          "colors": ["#0f5132", "#d4af37", "#f5e6d3"],
+          "size": 14,
+          "spacing": 40
+        }
+      }
+    },
+    {
+      "id": "pastel-floral",
+      "name": "Pastel Floral",
+      "description": "Blush pink, sage & soft gold — romantic and dreamy",
+      "colors": {
+        "primary": "#d4789c",
+        "secondary": "#9dc183",
+        "accent": "#d4af37",
+        "background": "#fff5f7",
+        "surface": "#ffffff",
+        "text": "#4a3b4a",
+        "muted": "#9a8a9a"
+      },
+      "fonts": {
+        "heading": "'Playfair Display', serif",
+        "body": "'Quicksand', sans-serif",
+        "script": "'Great Vibes', cursive"
+      },
+      "effects": {
+        "petals": { "rose": 30, "jasmine": 10 },
+        "trail": {
+          "enabled": true,
+          "colors": ["#f8c8dc", "#9dc183", "#d4af37", "#ffffff"],
+          "size": 20,
+          "spacing": 35
+        }
+      }
+    }
+  ]
+}

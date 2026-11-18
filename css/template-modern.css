@@ -1,0 +1,85 @@
+/* === MODERN MINIMAL === */
+body.layout-modern {
+  /* REMOVE hardcoded colors */
+  /* --color-primary: #0f5132; */
+  /* --color-secondary: #f5e6d3; */
+  /* --color-bg: #ffffff; */
+  
+  /* Keep fonts */
+  --font-heading: 'Montserrat', sans-serif;
+  --font-body: 'Lato', sans-serif;
+  --font-script: 'Cormorant Garamond', serif;
+  
+  background: var(--color-bg, #ffffff);
+}
+
+/* HERO — SPLIT */
+body.layout-modern .hero-section {
+  display: grid; grid-template-columns: 1fr 1fr; min-height: 90vh;
+  gap: 0; padding: 0; max-width: 100%;
+}
+body.layout-modern .hero-content {
+  padding: 80px 60px; display: flex; flex-direction: column; justify-content: center;
+}
+body.layout-modern .tagline { font-size: 13px; letter-spacing: 4px; text-transform: uppercase; color: var(--color-primary); margin-bottom: 30px; }
+body.layout-modern .names { font-family: var(--font-heading); font-weight: 700; font-size: clamp(40px, 6vw, 72px); color: var(--color-primary); line-height: 1.05; margin-bottom: 24px; }
+body.layout-modern .amp { display: block; font-family: var(--font-script); font-style: italic; font-weight: 400; color: var(--color-accent); font-size: 0.5em; margin: 10px 0; }
+body.layout-modern .invite { font-size: 16px; color: #666; margin-bottom: 30px; }
+body.layout-modern .dates { font-size: 14px; letter-spacing: 2px; text-transform: uppercase; color: var(--color-primary); font-weight: 500; }
+body.layout-modern .scroll-hint { display: none; }
+body.layout-modern .hero-image-wrap { height: 100%; }
+body.layout-modern .hero-image { width: 100%; height: 100%; object-fit: cover; }
+
+/* STORY */
+body.layout-modern .story-section { max-width: 700px; margin: 80px auto; text-align: left; }
+body.layout-modern .story-heading { font-size: 32px; font-weight: 700; color: var(--color-primary); margin-bottom: 20px; text-align: left; }
+body.layout-modern .story-quote { font-family: var(--font-script); font-style: italic; font-size: 24px; color: #444; border-left: 3px solid var(--color-accent); padding-left: 20px; }
+body.layout-modern .story-by { font-size: 14px; color: #888; margin-top: 20px; letter-spacing: 2px; text-transform: uppercase; }
+
+/* GALLERY — MASONRY */
+body.layout-modern .gallery-grid { columns: 3; column-gap: 12px; }
+body.layout-modern .gallery-grid img { width: 100%; margin-bottom: 12px; border-radius: 4px; transition: opacity 0.3s; }
+body.layout-modern .gallery-grid img:hover { opacity: 0.85; }
+
+/* FAMILIES — STACKED */
+body.layout-modern .families-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; }
+body.layout-modern .family-card { border-top: 2px solid var(--color-primary); padding-top: 20px; }
+body.layout-modern .family-card h3 { font-size: 14px; letter-spacing: 3px; text-transform: uppercase; color: var(--color-primary); margin-bottom: 14px; }
+body.layout-modern .family-card p { font-size: 16px; color: #444; }
+
+/* EVENTS — HORIZONTAL CARDS */
+body.layout-modern .events-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+body.layout-modern .event-day { display: contents; }
+body.layout-modern .event-day h3 { grid-column: 1 / -1; font-size: 14px; letter-spacing: 3px; text-transform: uppercase; color: var(--color-primary); padding: 20px 0 10px; border-top: 1px solid #eee; }
+body.layout-modern .event-item { background: #fafaf7; padding: 24px; border-radius: 4px; }
+body.layout-modern .event-item h4 { font-size: 18px; font-weight: 700; color: var(--color-primary); margin-bottom: 6px; }
+body.layout-modern .event-item .sub { font-size: 13px; color: #888; font-style: italic; }
+body.layout-modern .event-item .time { font-size: 13px; font-weight: 600; color: var(--color-accent); margin: 10px 0; letter-spacing: 1px; }
+body.layout-modern .event-item .text { font-size: 14px; color: #555; }
+
+/* VENUE */
+body.layout-modern .venue-content { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+body.layout-modern .venue-image { border-radius: 4px; }
+body.layout-modern .venue-maps-btn { display: inline-block; margin-top: 16px; padding: 12px 24px; background: var(--color-primary); color: #fff; text-decoration: none; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; font-weight: 600; }
+
+/* RSVP */
+body.layout-modern .rsvp-form { max-width: 420px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+body.layout-modern .rsvp-form input, body.layout-modern .rsvp-form select { padding: 14px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+body.layout-modern .rsvp-form button { padding: 16px; background: var(--color-primary); color: #fff; border: none; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; font-weight: 600; }
+
+/* FOOTER */
+body.layout-modern .footer-section { text-align: center; border-top: 1px solid #eee; }
+body.layout-modern .footer-names { font-size: 20px; font-weight: 700; letter-spacing: 4px; color: var(--color-primary); margin-bottom: 20px; }
+body.layout-modern .footer-parents { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; font-size: 14px; color: #555; }
+
+/* ANIMATION */
+body.layout-modern.anim-slide-in-horizontal .scroll-reveal { animation: slideIn 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+@keyframes slideIn { from { opacity: 0; transform: translateX(-40px); } to { opacity: 1; transform: translateX(0); } }
+
+@media (max-width: 720px) {
+  body.layout-modern .hero-section { grid-template-columns: 1fr; }
+  body.layout-modern .hero-content { padding: 60px 24px; }
+  body.layout-modern .hero-image-wrap { height: 50vh; }
+  body.layout-modern .gallery-grid { columns: 2; }
+  body.layout-modern .families-grid, body.layout-modern .venue-content, body.layout-modern .footer-parents { grid-template-columns: 1fr; }
+}
