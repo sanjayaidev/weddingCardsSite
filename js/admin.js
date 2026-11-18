@@ -1,30 +1,37 @@
 /**
- * Admin panel — loads all configs, lets user edit, saves to localStorage & GitHub.
+ * Admin panel — loads config from the server API (Neon-backed),
+ * edits locally with autosave, and publishes to the database with "Save to Server".
  */
 let CONTENT, THEMES, PRESETS;
 
 // === INITIALIZATION ===
 (async function initAdmin() {
-  // Try to load from localStorage first (previous edits), else from files
-  const storedContent = localStorage.getItem('config_content');
-  const storedThemes = localStorage.getItem('config_themes');
-  const storedPresets = localStorage.getItem('config_presets');
-
-  [CONTENT, THEMES, PRESETS] = await Promise.all([
-    storedContent ? Promise.resolve(JSON.parse(storedContent)) : fetch('config-content.json').then(r => r.json()),
-    storedThemes ? Promise.resolve(JSON.parse(storedThemes)) : fetch('config-themes.json').then(r => r.json()),
-    storedPresets ? Promise.resolve(JSON.parse(storedPresets)) : fetch('config-presets.json').then(r => r.json())
-  ]);
+  try {
+    const res = await fetch('api/config');
+    if (!res.ok) throw new Error('api/config -> ' + res.status);
+    const data = await res.json();
+    [CONTENT, THEMES, PRESETS] = [data.content, data.themes, data.presets];
+    showStatus('✅ Loaded current configuration from the server (Neon).', 'success');
+  } catch (err) {
+    // Fallback: static seed files
+    try {
+      [CONTENT, THEMES, PRESETS] = await Promise.all([
+        fetch('config/content.json').then(r => r.json()),
+        fetch('config/themes.json').then(r => r.json()),
+        fetch('config/presets.json').then(r => r.json()),
+      ]);
+      showStatus('⚠️ Could not reach the API — loaded bundled seed files. Edits can still be saved.', 'info');
+    } catch (e2) {
+      showStatus('❌ Failed to load configuration: ' + e2.message, 'error');
+      return;
+    }
+  }
 
   renderThemes();
   renderLayouts();
   loadContentFields();
   loadMediaFields();
-  loadGithubFields();
-
-  if (storedContent || storedThemes || storedPresets) {
-    showStatus('Loaded from browser storage. Click "Reset to Original Files" to discard changes.', 'info');
-  }
+  loadAdminToken();
 })();
 
 // === TABS ===
@@ -37,11 +44,17 @@ document.querySelectorAll('.tab').forEach(tab => {
   });
 });
 
-// === PERSIST TO LOCALSTORAGE ===
-function persistToStorage() {
-  localStorage.setItem('config_content', JSON.stringify(CONTENT));
-  localStorage.setItem('config_themes', JSON.stringify(THEMES));
-  localStorage.setItem('config_presets', JSON.stringify(PRESETS));
+// === LOCAL DRAFT PERSISTENCE (unsaved edits survive refresh) ===
+function persistDraft() {
+  localStorage.setItem('draft_content', JSON.stringify(CONTENT));
+  localStorage.setItem('draft_themes', JSON.stringify(THEMES));
+  localStorage.setItem('draft_presets', JSON.stringify(PRESETS));
+}
+
+function clearDraft() {
+  localStorage.removeItem('draft_content');
+  localStorage.removeItem('draft_themes');
+  localStorage.removeItem('draft_presets');
 }
 
 // === THEMES ===
@@ -62,7 +75,7 @@ function renderThemes() {
     card.addEventListener('click', () => {
       PRESETS.active.theme = card.dataset.theme;
       renderThemes();
-      persistToStorage();
+      persistDraft();
       showStatus('✅ Theme selected: ' + card.querySelector('h4').textContent + '. Click "Live Preview" to see it!', 'success');
     });
   });
@@ -83,7 +96,7 @@ function renderLayouts() {
     card.addEventListener('click', () => {
       PRESETS.active.layout = card.dataset.layout;
       renderLayouts();
-      persistToStorage();
+      persistDraft();
       showStatus('✅ Layout selected: ' + card.querySelector('h4').textContent + '. Click "Live Preview" to see it!', 'success');
     });
   });
@@ -110,14 +123,12 @@ function saveContentFields() {
   CONTENT.story.quote = document.getElementById('content-story-quote').value;
   CONTENT.venue.name = document.getElementById('content-venue-name').value;
   CONTENT.rsvp.whatsapp = document.getElementById('content-whatsapp').value;
-  persistToStorage();
+  persistDraft();
 }
 
 // Auto-save content fields on input
 document.querySelectorAll('#panel-content input, #panel-content textarea').forEach(input => {
-  input.addEventListener('input', () => {
-    saveContentFields();
-  });
+  input.addEventListener('input', () => saveContentFields());
 });
 
 // === MEDIA FIELDS ===
@@ -138,7 +149,7 @@ function saveMediaFields() {
   CONTENT.venue.image = document.getElementById('media-venue').value;
   CONTENT.music.src = document.getElementById('media-music').value;
   CONTENT.music.volume = parseFloat(document.getElementById('media-volume').value);
-  persistToStorage();
+  persistDraft();
 }
 
 document.getElementById('media-volume').addEventListener('input', (e) => {
@@ -153,86 +164,82 @@ document.querySelectorAll('#panel-media input').forEach(input => {
   }
 });
 
-// === GITHUB ===
-function loadGithubFields() {
-  document.getElementById('gh-repo').value = localStorage.getItem('gh_repo') || '';
-  document.getElementById('gh-branch').value = localStorage.getItem('gh_branch') || 'main';
-  document.getElementById('gh-token').value = localStorage.getItem('gh_token') || '';
-  document.getElementById('gh-remember').checked = !!localStorage.getItem('gh_token');
+// === ADMIN TOKEN ===
+function loadAdminToken() {
+  document.getElementById('admin-token').value = localStorage.getItem('admin_token') || '';
 }
 
-// === PREVIEW ===
-function openPreview() {
-  persistToStorage();
-  window.open('index.html?preview=1&t=' + Date.now(), '_blank');
+function getAdminToken() {
+  const t = document.getElementById('admin-token').value.trim();
+  if (t) localStorage.setItem('admin_token', t);
+  return t;
 }
 
-// === SAVE TO GITHUB ===
+// === SAVE TO SERVER (Neon) ===
 async function saveAll() {
   saveContentFields();
   saveMediaFields();
 
-  const repo = document.getElementById('gh-repo').value.trim();
-  const branch = document.getElementById('gh-branch').value.trim() || 'main';
-  const token = document.getElementById('gh-token').value.trim();
-
-  if (document.getElementById('gh-remember').checked) {
-    localStorage.setItem('gh_repo', repo);
-    localStorage.setItem('gh_branch', branch);
-    if (token) localStorage.setItem('gh_token', token);
-  } else {
-    localStorage.removeItem('gh_token');
-  }
-
-  if (!repo || !token) {
-    showStatus('❌ Please enter GitHub repository and token.', 'error');
-    return;
-  }
+  const token = getAdminToken();
+  const sections = [['content', CONTENT], ['themes', THEMES], ['presets', PRESETS]];
 
   try {
-    showStatus('⏳ Saving to GitHub...', 'info');
-    await pushToGithub(repo, branch, token, 'config-content.json', CONTENT);
-    await pushToGithub(repo, branch, token, 'config-themes.json', THEMES);
-    await pushToGithub(repo, branch, token, 'config-presets.json', PRESETS);
-    showStatus('✅ All 3 configs saved to GitHub! Site will update after redeploy (usually under a minute).', 'success');
+    showStatus('⏳ Saving to server…', 'info');
+    for (const [key, data] of sections) {
+      const res = await fetch('api/config/' + key, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'x-admin-token': token } : {})
+        },
+        body: JSON.stringify(data)
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(`Saving "${key}" failed: ${res.status} ${err.error || ''}`);
+      }
+    }
+    clearDraft();
+    showStatus('✅ All configs saved to the database! The invitation now reflects these changes for everyone.', 'success');
   } catch (err) {
-    showStatus('❌ Save failed: ' + err.message, 'error');
+    showStatus('❌ ' + err.message, 'error');
   }
 }
 
-async function pushToGithub(repo, branch, token, path, data) {
-  const getUrl = `https://api.github.com/repos/${repo}/contents/${path}?ref=${branch}`;
-  let sha = null;
-  
+// === LOAD RSVPs ===
+async function loadRsvps() {
+  const token = getAdminToken();
+  const tbody = document.getElementById('rsvp-rows');
   try {
-    const res = await fetch(getUrl, { headers: { Authorization: `Bearer ${token}` } });
-    if (res.ok) {
-      const cur = await res.json();
-      sha = cur.sha;
+    const res = await fetch('api/rsvps', { headers: token ? { 'x-admin-token': token } : {} });
+    if (res.status === 401) throw new Error('Wrong admin token.');
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || ('HTTP ' + res.status));
     }
-  } catch (e) {}
-
-  const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
-  const body = {
-    message: `Update ${path}`,
-    content,
-    branch,
-    ...(sha ? { sha } : {})
-  };
-
-  const res = await fetch(getUrl, {
-    method: 'PUT',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(body)
-  });
-  
-  if (!res.ok) {
-    const errData = await res.json().catch(() => ({}));
-    throw new Error(`GitHub API error on ${path}: ${res.status} ${errData.message || ''}`);
+    const rows = await res.json();
+    document.getElementById('rsvp-count').textContent = rows.length;
+    tbody.innerHTML = rows.map(r => `
+      <tr>
+        <td>#${r.id}</td>
+        <td>${escapeHtml(r.name)}</td>
+        <td>${escapeHtml(r.from_side || r.from || '')}</td>
+        <td>${escapeHtml(r.events || '')}</td>
+        <td>${escapeHtml(r.guests || '')}</td>
+        <td>${new Date(r.created_at).toLocaleString()}</td>
+      </tr>`).join('') || '<tr><td colspan="6">No RSVPs yet.</td></tr>';
+  } catch (err) {
+    showStatus('❌ Could not load RSVPs: ' + err.message, 'error');
   }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// === PREVIEW ===
+function openPreview() {
+  window.open('index.html?preview=1&t=' + Date.now(), '_blank');
 }
 
 // === DOWNLOAD ===
@@ -257,10 +264,8 @@ function download(name, data) {
 
 // === RESET ===
 function resetStorage() {
-  if (confirm('This will discard all unsaved changes and reload from the original JSON files. Continue?')) {
-    localStorage.removeItem('config_content');
-    localStorage.removeItem('config_themes');
-    localStorage.removeItem('config_presets');
+  if (confirm('This will discard unsaved draft edits and reload from the server database. Continue?')) {
+    clearDraft();
     location.reload();
   }
 }

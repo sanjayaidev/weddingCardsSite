@@ -139,12 +139,24 @@
   fillSelect('rsvp-guests', content.rsvp?.guests);
   setText('rsvp-button', content.rsvp?.button);
 
-  document.getElementById('rsvp-form').addEventListener('submit', (e) => {
+  document.getElementById('rsvp-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = document.getElementById('rsvp-name').value;
     const from = document.getElementById('rsvp-from').value;
     const events = document.getElementById('rsvp-events').value;
     const guests = document.getElementById('rsvp-guests').value;
+
+    // Save the RSVP to the server (stored in Neon Postgres)
+    try {
+      await fetch('api/rsvp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, from, events, guests }),
+      });
+    } catch (err) {
+      console.warn('RSVP save failed:', err.message);
+    }
+
     const msg = `*New RSVP*%0AName: ${name}%0AFrom: ${from}%0AEvents: ${events}%0AGuests: ${guests}`;
     if (content.rsvp?.whatsapp) {
       window.open(`https://wa.me/${content.rsvp.whatsapp}?text=${msg}`, '_blank');

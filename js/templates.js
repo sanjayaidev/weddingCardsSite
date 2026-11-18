@@ -1,20 +1,33 @@
+/**
+ * Loads all config from the server API (backed by Neon Postgres).
+ * Falls back to static JSON files if the API is unreachable.
+ */
 const Templates = (() => {
   let contentConfig = null;
   let themesConfig = null;
   let presetsConfig = null;
 
+  async function fetchJson(url) {
+    const res = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (!res.ok) throw new Error(`${url} -> ${res.status}`);
+    return res.json();
+  }
+
   async function loadAll() {
-    // Try to load from localStorage first (admin edits), else from files
-    const storedContent = localStorage.getItem('config_content');
-    const storedThemes = localStorage.getItem('config_themes');
-    const storedPresets = localStorage.getItem('config_presets');
-
-    [contentConfig, themesConfig, presetsConfig] = await Promise.all([
-      storedContent ? Promise.resolve(JSON.parse(storedContent)) : fetch('config-content.json').then(r => r.json()),
-      storedThemes ? Promise.resolve(JSON.parse(storedThemes)) : fetch('config-themes.json').then(r => r.json()),
-      storedPresets ? Promise.resolve(JSON.parse(storedPresets)) : fetch('config-presets.json').then(r => r.json())
-    ]);
-
+    try {
+      const data = await fetchJson('api/config');
+      contentConfig = data.content;
+      themesConfig = data.themes;
+      presetsConfig = data.presets;
+      if (!contentConfig || !themesConfig || !presetsConfig) throw new Error('Incomplete config payload');
+    } catch (err) {
+      console.warn('API config load failed, falling back to static files:', err.message);
+      [contentConfig, themesConfig, presetsConfig] = await Promise.all([
+        fetchJson('config/content.json'),
+        fetchJson('config/themes.json'),
+        fetchJson('config/presets.json'),
+      ]);
+    }
     return { content: contentConfig, themes: themesConfig, presets: presetsConfig };
   }
 
