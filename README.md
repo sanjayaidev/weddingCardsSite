@@ -29,12 +29,15 @@ admin token is a shared secret for shared config edits and legacy RSVP viewing;
 it does not connect to Neon or create tables.
 
 Create an account in the admin page to get a private invitation editor. Its
-drafts are isolated by account in that browser; **Save to Server** saves your
-personal design privately. Enter a desired URL slug and choose **Save &
-publish** to make it public. Slugs are unique across accounts; leave the slug
-blank to generate one automatically. The live invitation is available at
-`/?card=<slug>`. Admin-token editing of the shared default configuration
-continues to work separately.
+drafts are isolated by account in that browser. **Save Draft** saves locally
+when signed out and privately to the account when signed in. Enter a desired
+URL slug and choose **Save & publish** to make it public. Slugs are unique
+across accounts; leave the slug blank to generate one automatically. The live
+invitation is available at `/?card=<slug>`.
+
+The invitation content editor exposes all configured text, dates, lists, and
+other content fields. The Events tab lets you edit event details and add or
+remove event days and events. Images and music are edited in their own tab.
 
 The media editor supports the gate, hero, story background, banner, venue,
 gallery photos (including add/remove), gallery feature photo, and each event's

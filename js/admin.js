@@ -1,6 +1,6 @@
 /**
  * Admin panel — loads config from the server API (Neon-backed),
- * edits locally with autosave, and publishes to the database with "Save to Server".
+ * edits invitation content locally with autosave and publishes personal cards.
  */
 let CONTENT, THEMES, PRESETS;
 let USER = null;
@@ -35,7 +35,6 @@ let currentSlug = '';
   renderLayouts();
   loadContentFields();
   loadMediaFields();
-  loadAdminToken();
 })();
 
 // === TABS ===
@@ -100,6 +99,8 @@ async function initializeAccount() {
   document.getElementById('account-logout').addEventListener('click', logout);
   document.getElementById('publish-card').addEventListener('click', publishCard);
   document.getElementById('add-gallery-image').addEventListener('click', () => {
+    if (!CONTENT.gallery) CONTENT.gallery = {};
+    if (!Array.isArray(CONTENT.gallery.images)) CONTENT.gallery.images = [];
     CONTENT.gallery.images.push({ src: '', alt: '' });
     renderGalleryFields();
     persistDraft();
@@ -233,34 +234,189 @@ function renderLayouts() {
   });
 }
 
-// === CONTENT FIELDS ===
+// === CONTENT EDITORS ===
+const CONTENT_MEDIA_PATHS = new Set([
+  'gate.image',
+  'hero.image',
+  'story.image',
+  'banner.image',
+  'venue.image',
+  'gallery.images',
+  'gallery.single.image',
+]);
+
 function loadContentFields() {
-  document.getElementById('content-title').value = CONTENT.meta?.title || '';
-  document.getElementById('content-name1').value = CONTENT.hero?.name1 || '';
-  document.getElementById('content-name2').value = CONTENT.hero?.name2 || '';
-  document.getElementById('content-tagline').value = CONTENT.hero?.tagline || '';
-  document.getElementById('content-story-heading').value = CONTENT.story?.heading || '';
-  document.getElementById('content-story-quote').value = CONTENT.story?.quote || '';
-  document.getElementById('content-venue-name').value = CONTENT.venue?.name || '';
-  document.getElementById('content-whatsapp').value = CONTENT.rsvp?.whatsapp || '';
+  renderContentEditor();
+  renderEventsEditor();
 }
 
-function saveContentFields() {
-  CONTENT.meta.title = document.getElementById('content-title').value;
-  CONTENT.hero.name1 = document.getElementById('content-name1').value;
-  CONTENT.hero.name2 = document.getElementById('content-name2').value;
-  CONTENT.hero.tagline = document.getElementById('content-tagline').value;
-  CONTENT.story.heading = document.getElementById('content-story-heading').value;
-  CONTENT.story.quote = document.getElementById('content-story-quote').value;
-  CONTENT.venue.name = document.getElementById('content-venue-name').value;
-  CONTENT.rsvp.whatsapp = document.getElementById('content-whatsapp').value;
+function renderContentEditor() {
+  const container = document.getElementById('content-fields');
+  container.replaceChildren();
+  Object.entries(CONTENT).forEach(([key, value]) => {
+    if (key === 'events' || key === 'music') return;
+    renderEditorValue(value, container, key, 'content');
+  });
+}
+
+function renderEventsEditor() {
+  const container = document.getElementById('events-fields');
+  container.replaceChildren();
+  if (!CONTENT.events || typeof CONTENT.events !== 'object') CONTENT.events = { label: '', heading: '', days: [] };
+  renderEditorValue(CONTENT.events, container, 'events', 'events');
+}
+
+function renderEditorValue(value, container, path, editor) {
+  const key = path.split('.').at(-1);
+  if (editor === 'content' && CONTENT_MEDIA_PATHS.has(path)) return;
+
+  if (Array.isArray(value)) {
+    const section = document.createElement('div');
+    section.className = 'content-editor-group';
+    const heading = document.createElement('strong');
+    heading.textContent = editorLabel(key);
+    section.appendChild(heading);
+
+    value.forEach((item, index) => {
+      const itemPath = `${path}.${index}`;
+      if (item && typeof item === 'object') {
+        const details = document.createElement('details');
+        details.className = 'content-editor-item';
+        details.open = true;
+        const summary = document.createElement('summary');
+        const itemName = path === 'events.days' ? 'Day' : path.endsWith('.items') ? 'Event' : editorLabel(key);
+        summary.textContent = `${itemName} ${index + 1}`;
+        details.appendChild(summary);
+        renderEditorValue(item, details, itemPath, editor);
+        const actions = document.createElement('div');
+        actions.className = 'content-editor-actions';
+        actions.appendChild(makeEditorButton('Remove', 'btn btn-danger', () => {
+          value.splice(index, 1);
+          refreshEditor(editor);
+        }));
+        details.appendChild(actions);
+        section.appendChild(details);
+      } else {
+        section.appendChild(makeEditorField(item, editorLabel(key), (nextValue) => {
+          value[index] = nextValue;
+          persistDraft();
+        }, itemPath));
+        const actions = document.createElement('div');
+        actions.className = 'content-editor-actions';
+        actions.appendChild(makeEditorButton('Remove', 'btn btn-danger', () => {
+          value.splice(index, 1);
+          refreshEditor(editor);
+        }));
+        section.appendChild(actions);
+      }
+    });
+
+    section.appendChild(makeEditorButton(`＋ Add ${path === 'events.days' ? 'day' : path.endsWith('.items') ? 'event' : 'item'}`, 'btn btn-secondary content-editor-add', () => {
+      value.push(createArrayItem(path, value));
+      refreshEditor(editor);
+    }));
+    container.appendChild(section);
+    return;
+  }
+
+  if (value && typeof value === 'object') {
+    const details = document.createElement('details');
+    details.className = path.split('.').length === 1 ? 'content-editor-section' : 'content-editor-group';
+    details.open = true;
+    const summary = document.createElement('summary');
+    summary.textContent = editorLabel(key);
+    details.appendChild(summary);
+    Object.entries(value).forEach(([childKey, childValue]) => {
+      renderEditorValue(childValue, details, `${path}.${childKey}`, editor);
+    });
+    container.appendChild(details);
+    return;
+  }
+
+  const field = makeEditorField(value, editorLabel(key), (nextValue) => {
+    const pathParts = path.split('.');
+    const property = pathParts.pop();
+    const parent = pathParts.reduce((current, part) => current[part], CONTENT);
+    parent[property] = nextValue;
+    persistDraft();
+  }, path);
+  container.appendChild(field);
+}
+
+function makeEditorField(value, labelText, onChange, path) {
+  const field = document.createElement('div');
+  field.className = 'content-editor-field';
+  const label = document.createElement('label');
+  label.textContent = labelText;
+  const isLongText = typeof value === 'string'
+    && (value.length > 100 || /(?:text|quote|intro|regards|address)$/i.test(path));
+  const input = document.createElement(isLongText ? 'textarea' : 'input');
+  if (input.tagName === 'INPUT') {
+    input.type = path === 'hero.countdownTo' ? 'datetime-local' : typeof value === 'number' ? 'number' : 'text';
+    if (input.type === 'number') input.step = 'any';
+  }
+  input.value = path === 'hero.countdownTo' ? toDateTimeLocal(value) : value ?? '';
+  input.addEventListener('input', () => {
+    let nextValue = input.value;
+    if (path === 'hero.countdownTo') {
+      nextValue = nextValue ? new Date(nextValue).toISOString() : '';
+    } else if (typeof value === 'number') {
+      nextValue = input.value === '' ? 0 : Number(input.value);
+    }
+    onChange(nextValue);
+  });
+  field.append(label, input);
+  return field;
+}
+
+function toDateTimeLocal(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+  return date.toISOString().slice(0, 16);
+}
+
+function createArrayItem(path, items) {
+  if (path === 'events.days') return { date: '', items: [] };
+  if (path.endsWith('.items') && path.startsWith('events.days.')) {
+    return { icon: '', title: '', sub: '', time: '', theme: '', colors: [], text: '', image: '' };
+  }
+  if (items.length) return blankValue(items[0]);
+  return '';
+}
+
+function blankValue(value) {
+  if (Array.isArray(value)) return [];
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([key, child]) => [key, blankValue(child)]));
+  }
+  if (typeof value === 'number') return 0;
+  if (typeof value === 'boolean') return false;
+  return '';
+}
+
+function editorLabel(key) {
+  return String(key)
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/[_-]+/g, ' ')
+    .replace(/^./, (character) => character.toUpperCase());
+}
+
+function makeEditorButton(text, className, onClick) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = className;
+  button.textContent = text;
+  button.addEventListener('click', onClick);
+  return button;
+}
+
+function refreshEditor(editor) {
+  if (editor === 'events') renderEventsEditor();
+  else renderContentEditor();
   persistDraft();
 }
-
-// Auto-save content fields on input
-document.querySelectorAll('#panel-content input, #panel-content textarea').forEach(input => {
-  input.addEventListener('input', () => saveContentFields());
-});
 
 // === MEDIA FIELDS ===
 function loadMediaFields() {
@@ -274,7 +430,6 @@ function loadMediaFields() {
   document.getElementById('media-volume').value = CONTENT.music?.volume ?? 0.6;
   document.getElementById('vol-label').textContent = Math.round((CONTENT.music?.volume ?? 0.6) * 100) + '%';
   renderGalleryFields();
-  renderEventImageFields();
 }
 
 function saveMediaFields() {
@@ -283,6 +438,7 @@ function saveMediaFields() {
   CONTENT.story.image = document.getElementById('media-story').value;
   CONTENT.venue.image = document.getElementById('media-venue').value;
   CONTENT.banner.image = document.getElementById('media-banner').value;
+  if (!CONTENT.gallery.single) CONTENT.gallery.single = {};
   CONTENT.gallery.single.image = document.getElementById('media-gallery-single').value;
   CONTENT.music.src = document.getElementById('media-music').value;
   CONTENT.music.volume = parseFloat(document.getElementById('media-volume').value);
@@ -341,33 +497,6 @@ function renderGalleryFields() {
   });
 }
 
-function renderEventImageFields() {
-  const list = document.getElementById('event-image-fields');
-  list.replaceChildren();
-
-  (CONTENT.events?.days || []).forEach((day) => {
-    const heading = document.createElement('h4');
-    heading.textContent = day.date;
-    list.appendChild(heading);
-    (day.items || []).forEach((event) => {
-      const field = document.createElement('div');
-      field.className = 'field';
-      const label = document.createElement('label');
-      label.textContent = `${event.title} image URL`;
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.value = event.image || '';
-      input.placeholder = 'https://... or assets/events/photo.jpg';
-      input.addEventListener('input', () => {
-        event.image = input.value;
-        persistDraft();
-      });
-      field.append(label, input);
-      list.appendChild(field);
-    });
-  });
-}
-
 document.getElementById('media-volume').addEventListener('input', (e) => {
   document.getElementById('vol-label').textContent = Math.round(e.target.value * 100) + '%';
   saveMediaFields();
@@ -380,20 +509,8 @@ document.querySelectorAll('#panel-media input').forEach(input => {
   }
 });
 
-// === ADMIN TOKEN ===
-function loadAdminToken() {
-  document.getElementById('admin-token').value = localStorage.getItem('admin_token') || '';
-}
-
-function getAdminToken() {
-  const t = document.getElementById('admin-token').value.trim();
-  if (t) localStorage.setItem('admin_token', t);
-  return t;
-}
-
-// === SAVE TO SERVER (Neon) ===
-async function saveAll() {
-  saveContentFields();
+// === SAVE DRAFT ===
+async function saveDraft() {
   saveMediaFields();
 
   if (ACCOUNT_MODE) {
@@ -405,31 +522,8 @@ async function saveAll() {
     }
     return;
   }
-
-  const token = getAdminToken();
-  const sections = [['content', CONTENT], ['themes', THEMES], ['presets', PRESETS]];
-
-  try {
-    showStatus('⏳ Saving to server…', 'info');
-    for (const [key, data] of sections) {
-      const res = await fetch('api/config/' + key, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'x-admin-token': token } : {})
-        },
-        body: JSON.stringify(data)
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(`Saving "${key}" failed: ${res.status} ${err.error || ''}`);
-      }
-    }
-    clearDraft();
-    showStatus('✅ All configs saved to the database! The invitation now reflects these changes for everyone.', 'success');
-  } catch (err) {
-    showStatus('❌ ' + err.message, 'error');
-  }
+  persistDraft();
+  showStatus('✅ Draft saved in this browser. Sign in to save changes to your account.', 'success');
 }
 
 async function savePersonalCard() {
@@ -444,7 +538,6 @@ async function savePersonalCard() {
 }
 
 async function publishCard() {
-  saveContentFields();
   saveMediaFields();
   const slug = document.getElementById('card-slug').value.trim();
   try {
@@ -470,47 +563,14 @@ async function publishCard() {
   }
 }
 
-// === LOAD RSVPs ===
-async function loadRsvps() {
-  const token = getAdminToken();
-  const tbody = document.getElementById('rsvp-rows');
-  try {
-    const res = await fetch('api/rsvps', { headers: token ? { 'x-admin-token': token } : {} });
-    if (res.status === 401) throw new Error('Wrong admin token.');
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || ('HTTP ' + res.status));
-    }
-    const rows = await res.json();
-    document.getElementById('rsvp-count').textContent = rows.length;
-    tbody.innerHTML = rows.map(r => `
-      <tr>
-        <td>#${r.id}</td>
-        <td>${escapeHtml(r.name)}</td>
-        <td>${escapeHtml(r.from_side || r.from || '')}</td>
-        <td>${escapeHtml(r.events || '')}</td>
-        <td>${escapeHtml(r.guests || '')}</td>
-        <td>${new Date(r.created_at).toLocaleString()}</td>
-      </tr>`).join('') || '<tr><td colspan="6">No RSVPs yet.</td></tr>';
-  } catch (err) {
-    showStatus('❌ Could not load RSVPs: ' + err.message, 'error');
-  }
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
-
 // === PREVIEW ===
 function openPreview() {
-  saveContentFields();
   saveMediaFields();
   window.open(`index.html?preview=1&draftUser=${encodeURIComponent(draftUser())}&t=${Date.now()}`, '_blank');
 }
 
 // === DOWNLOAD ===
 function downloadConfigs() {
-  saveContentFields();
   saveMediaFields();
   download('config-content.json', CONTENT);
   download('config-themes.json', THEMES);
@@ -530,7 +590,7 @@ function download(name, data) {
 
 // === RESET ===
 function resetStorage() {
-  if (confirm('This will discard unsaved draft edits and reload from the server database. Continue?')) {
+  if (confirm("This will discard this browser's draft and reload the saved invitation. Continue?")) {
     clearDraft();
     location.reload();
   }

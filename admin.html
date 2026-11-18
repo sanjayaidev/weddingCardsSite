@@ -71,6 +71,18 @@
     .image-editor-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 10px; align-items: end; padding: 14px 0; border-bottom: 1px solid #eee; }
     .image-editor-row .field { margin: 0; }
     .image-editor-row .btn { padding: 10px 14px; }
+    .content-editor-section { border: 1px solid #e6e6e6; border-radius: 10px; padding: 18px; margin: 16px 0; }
+    .content-editor-section > summary { cursor: pointer; font-size: 18px; font-weight: 700; }
+    .content-editor-group { border-left: 3px solid #eee; padding-left: 14px; margin: 14px 0; }
+    .content-editor-group > summary { cursor: pointer; font-weight: 600; margin-bottom: 12px; }
+    .content-editor-field { margin: 12px 0; }
+    .content-editor-field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #444; }
+    .content-editor-field input, .content-editor-field textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font: inherit; }
+    .content-editor-field textarea { min-height: 76px; resize: vertical; }
+    .content-editor-item { border: 1px solid #eee; border-radius: 8px; padding: 14px; margin: 12px 0; }
+    .content-editor-item > summary { cursor: pointer; font-weight: 600; }
+    .content-editor-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
+    .content-editor-add { margin-top: 10px; padding: 10px 14px; }
     .image-editor-group { margin: 20px 0; }
     .image-editor-group > h3 { margin-bottom: 6px; }
     .image-editor-group > p { margin-bottom: 8px; font-size: 13px; color: #777; }
@@ -123,9 +135,9 @@
   <div class="tabs">
     <button class="tab active" data-tab="themes">1 · Color Theme</button>
     <button class="tab" data-tab="layouts">2 · Layout</button>
-    <button class="tab" data-tab="content">3 · Content</button>
-    <button class="tab" data-tab="media">4 · Media & Music</button>
-    <button class="tab" data-tab="rsvps">5 · RSVPs</button>
+    <button class="tab" data-tab="content">3 · Invitation content</button>
+    <button class="tab" data-tab="media">4 · Images & Music</button>
+    <button class="tab" data-tab="events">5 · Events</button>
   </div>
 
   <!-- THEME PANEL -->
@@ -144,40 +156,9 @@
 
   <!-- CONTENT PANEL -->
   <div class="panel" id="panel-content">
-    <h2>Edit Content</h2>
-    <div class="field">
-      <label>Page Title</label>
-      <input type="text" id="content-title" placeholder="Rashi & Manish — You're Invited" />
-    </div>
-    <div class="field">
-      <label>Bride's Name</label>
-      <input type="text" id="content-name1" placeholder="Rashi" />
-    </div>
-    <div class="field">
-      <label>Groom's Name</label>
-      <input type="text" id="content-name2" placeholder="Manish" />
-    </div>
-    <div class="field">
-      <label>Tagline</label>
-      <input type="text" id="content-tagline" placeholder="Shubh Vivah · Together with their families" />
-    </div>
-    <div class="field">
-      <label>Story Heading</label>
-      <input type="text" id="content-story-heading" placeholder="two hearts, one beautiful journey...." />
-    </div>
-    <div class="field">
-      <label>Story Quote</label>
-      <textarea id="content-story-quote" placeholder=""We are delighted to invite you...""></textarea>
-    </div>
-    <div class="field">
-      <label>Venue Name</label>
-      <input type="text" id="content-venue-name" placeholder="Tata Dharamsala" />
-    </div>
-    <div class="field">
-      <label>WhatsApp number for this invitation (country code + number)</label>
-      <input type="tel" id="content-whatsapp" inputmode="tel" placeholder="919162375557" />
-      <p style="font-size:13px;color:#666;margin-top:6px;">Guest replies open WhatsApp directly and are not saved to the database. This number is saved with your invitation.</p>
-    </div>
+    <h2>Edit invitation content</h2>
+    <p style="margin-bottom:20px;color:#666;">Edit every invitation text and list here, including names, wedding dates, venue details, RSVP options and footer. Enter the RSVP WhatsApp number with its country code (digits only). Use the Events tab for event schedules and the Images &amp; Music tab for media.</p>
+    <div id="content-fields"></div>
   </div>
 
   <!-- MEDIA PANEL -->
@@ -213,11 +194,6 @@
       <div id="gallery-image-fields"></div>
       <button class="btn btn-secondary" type="button" id="add-gallery-image">＋ Add gallery photo</button>
     </div>
-    <div class="image-editor-group">
-      <h3>Event photos</h3>
-      <p>Set an image for each event shown on the invitation.</p>
-      <div id="event-image-fields"></div>
-    </div>
     <div class="field">
       <label>Music URL (MP3/M4A)</label>
       <input type="text" id="media-music" placeholder="song.mp4 or https://..." />
@@ -228,47 +204,22 @@
     </div>
   </div>
 
-  <!-- RSVP PANEL -->
-  <div class="panel" id="panel-rsvps">
-    <h2>Guest RSVPs <span style="font-size:14px;color:#888;">(<span id="rsvp-count">0</span> total)</span></h2>
-    <p style="margin-bottom:16px;color:#666;">New replies open WhatsApp directly and are not stored. Any older database RSVPs remain available below.</p>
-    <button class="btn btn-secondary" onclick="loadRsvps()" style="margin-bottom:16px;">🔄 Refresh list</button>
-    <table style="width:100%;border-collapse:collapse;font-size:14px;">
-      <thead>
-        <tr style="text-align:left;border-bottom:2px solid #ddd;">
-          <th style="padding:8px;">#</th>
-          <th style="padding:8px;">Name</th>
-          <th style="padding:8px;">From</th>
-          <th style="padding:8px;">Events</th>
-          <th style="padding:8px;">Guests</th>
-          <th style="padding:8px;">When</th>
-        </tr>
-      </thead>
-      <tbody id="rsvp-rows"><tr><td colspan="6">Click "Refresh list" to load RSVPs.</td></tr></tbody>
+  <!-- EVENTS PANEL -->
+  <div class="panel" id="panel-events">
+    <h2>Edit event schedule</h2>
+    <p style="margin-bottom:20px;color:#666;">Update event dates and details, add or remove event days, and add or remove events within each day.</p>
+    <div id="events-fields"></div>
     </table>
   </div>
 
   <!-- ACTIONS -->
   <div class="actions">
     <button class="btn btn-secondary" onclick="openPreview()">👁 Live Preview</button>
-    <button class="btn btn-primary" onclick="saveAll()">💾 Save to Server</button>
+    <button class="btn btn-primary" onclick="saveDraft()">💾 Save Draft</button>
     <button class="btn btn-secondary" onclick="downloadConfigs()">⬇ Download Configs</button>
     <button class="btn btn-danger" onclick="resetStorage()">🔄 Discard Draft & Reload</button>
   </div>
   <div id="status" class="status"></div>
-
-  <!-- SERVER / ADMIN TOKEN -->
-  <div class="github-section">
-    <h3>Server Connection</h3>
-    <div class="field">
-      <label>Admin Token</label>
-      <input type="password" id="admin-token" placeholder="matches ADMIN_TOKEN in server .env" />
-    </div>
-    <p style="margin-top:12px; font-size:13px; color:#666;">
-      Configs and RSVPs are stored in <strong>Neon Postgres</strong> via the Node.js server's <code>/api</code> endpoints.<br>
-      Set <code>DATABASE_URL</code> (Neon connection string) and <code>ADMIN_TOKEN</code> in the server's <code>.env</code> file.
-    </p>
-  </div>
 
   <script src="js/admin.js"></script>
 </body>
